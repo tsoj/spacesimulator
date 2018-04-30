@@ -19,6 +19,13 @@ struct Obj
     glm::float_t transparency;
     glm::float_t shininess;
 
+    std::string ambientTexture;
+    std::string diffuseTexture;
+    std::string specularColorTexture;
+    std::string specularHighlightTexture;
+    std::string alphaTexture;
+    std::string normalMap;
+
     static void loadMtl(std::string filePath, std::vector<Mtl>& materials, std::map<std::string, size_t>& mtlIndices)
     {
       std::string mtlData = readFile(filePath);
@@ -72,6 +79,36 @@ struct Obj
         {
           bufferStringStream >> bufferString;
           materials.back().shininess = std::atof(bufferString.c_str());
+        }
+        else if(bufferString == "map_Ka")
+        {
+          bufferStringStream >> bufferString;
+          materials.back().ambientTexture = bufferString;
+        }
+        else if(bufferString == "map_Kd")
+        {
+          bufferStringStream >> bufferString;
+          materials.back().diffuseTexture = bufferString;
+        }
+        else if(bufferString == "map_Ks")
+        {
+          bufferStringStream >> bufferString;
+          materials.back().specularColorTexture = bufferString;
+        }
+        else if(bufferString == "map_Ns")
+        {
+          bufferStringStream >> bufferString;
+          materials.back().specularHighlightTexture = bufferString;
+        }
+        else if(bufferString == "map_d")
+        {
+          bufferStringStream >> bufferString;
+          materials.back().alphaTexture = bufferString;
+        }
+        else if(bufferString == "bump" || bufferString == "map_bump")
+        {
+          bufferStringStream >> bufferString;
+          materials.back().normalMap = bufferString;
         }
       }
     }

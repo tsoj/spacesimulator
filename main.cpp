@@ -1,5 +1,7 @@
 #include <iostream>
 
+#include <GL/glew.h>
+
 #include "ecs.hpp"
 
 
