@@ -29,6 +29,7 @@ struct Obj
     static void loadMtl(std::string filePath, std::vector<Mtl>& materials, std::map<std::string, size_t>& mtlIndices)
     {
       std::string mtlData = IO::readFile(filePath);
+      std::string directory = getWorkingDirectoy(filePath);
 
       std::stringstream modelDataStream(mtlData);
     	std::string bufferString;
@@ -83,22 +84,22 @@ struct Obj
         else if(bufferString == "map_Ka")
         {
           bufferStringStream >> bufferString;
-          materials.back().ambientTexture = bufferString;
+          materials.back().ambientTexture = directory + bufferString;
         }
         else if(bufferString == "map_Kd")
         {
           bufferStringStream >> bufferString;
-          materials.back().diffuseTexture = bufferString;
+          materials.back().diffuseTexture = directory + bufferString;
         }
         else if(bufferString == "map_Ks")
         {
           bufferStringStream >> bufferString;
-          materials.back().specularColorTexture = bufferString;
+          materials.back().specularColorTexture = directory + bufferString;
         }
         else if(bufferString == "map_Ns")
         {
           bufferStringStream >> bufferString;
-          materials.back().specularHighlightTexture = bufferString;
+          materials.back().specularHighlightTexture = directory + bufferString;
         }
         else if(bufferString == "map_d")
         {
@@ -108,7 +109,7 @@ struct Obj
         else if(bufferString == "bump" || bufferString == "map_bump")
         {
           bufferStringStream >> bufferString;
-          materials.back().normalMap = bufferString;
+          materials.back().normalMap = directory + bufferString;
         }
       }
     }
@@ -124,6 +125,7 @@ struct Obj
   static Obj loadObj(std::string filePath)
   {
     std::string modelData = IO::readFile(filePath);
+    std::string directory = getWorkingDirectoy(filePath);
 
     std::vector<glm::vec3> positions = std::vector<glm::vec3>();
     std::vector<glm::vec2> textureCoordinates = std::vector<glm::vec2>();
@@ -149,7 +151,7 @@ struct Obj
   		else if (bufferString == "mtllib")
   		{
   		  bufferStringStream >> bufferString;
-        Mtl::loadMtl(bufferString, mtls, mtlIndices);
+        Mtl::loadMtl(directory + bufferString, mtls, mtlIndices);
   		}
   		else if (bufferString == "usemtl")
   		{
@@ -265,5 +267,23 @@ struct Obj
       }
   	}
     return ret;
+  }
+  private:
+  static std::string getWorkingDirectoy(std::string filePath)
+  {
+    std::string directory = "";
+    bool found = false;
+    for(size_t i = filePath.size(); i+1!=0; i--)
+    {
+      if(filePath[i]=='/' && found==false)
+      {
+        found=true;
+      }
+      if(found)
+      {
+        directory = filePath[i] + directory;
+      }
+    }
+    return directory;
   }
 };

@@ -1,6 +1,6 @@
 # Blender v2.79 (sub 0) OBJ File: ''
 # www.blender.org
-mtllib Plane.mtl
+mtllib plane.mtl
 o Plane
 v -15.570293 0.000000 15.570293
 v 15.570293 0.000000 15.570293
