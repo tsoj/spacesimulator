@@ -66,11 +66,11 @@ struct Renderable
       models[i].transparency = obj.objects[i].mtl.transparency;
       models[i].shininess = obj.objects[i].mtl.shininess;
 
-      models[i].ambientTextureID = Texture::generateTexture(obj.objects[i].mtl.ambientTexture.c_str()).loadGlTexture();
+      //TODO:models[i].ambientTextureID = Texture::generateTexture(obj.objects[i].mtl.ambientTexture.c_str()).loadGlTexture();
       models[i].diffuseTextureID = Texture::generateTexture(obj.objects[i].mtl.diffuseTexture.c_str()).loadGlTexture();
-      models[i].specularColorTextureID = Texture::generateTexture(obj.objects[i].mtl.specularColorTexture.c_str()).loadGlTexture();
-      models[i].specularHighlightTextureID = Texture::generateTexture(obj.objects[i].mtl.specularHighlightTexture.c_str()).loadGlTexture();
-      models[i].alphaTextureID = Texture::generateTexture(obj.objects[i].mtl.alphaTexture.c_str()).loadGlTexture();
+      //TODO:models[i].specularColorTextureID = Texture::generateTexture(obj.objects[i].mtl.specularColorTexture.c_str()).loadGlTexture();
+      //TODO:models[i].specularHighlightTextureID = Texture::generateTexture(obj.objects[i].mtl.specularHighlightTexture.c_str()).loadGlTexture();
+      //TODO:models[i].alphaTextureID = Texture::generateTexture(obj.objects[i].mtl.alphaTexture.c_str()).loadGlTexture();
       models[i].normalMapID = Texture::generateTexture(obj.objects[i].mtl.normalMap.c_str()).loadGlTexture();
 
       models[i].vertices = std::vector<Vertex>(obj.objects[i].vertices);
@@ -135,6 +135,6 @@ struct Renderable
       models[i].normalMap_UniformLocation = glGetUniformLocation(models[i].programID, "normalMap");
     }
   }
-  
+
   std::vector<Model> models = std::vector<Model>();
 };

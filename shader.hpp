@@ -17,6 +17,7 @@ GLuint compileShaders(std::string vertFile, std::string fragFile)
   glShaderSource(vertexShaderID, 1, &vertAdapter, 0);
   glCompileShader(vertexShaderID);
 
+
   std::string fragmentShaderCode = IO::readFile(fragFile);
   const char* fragAdapter = fragmentShaderCode.data();
   glShaderSource(fragmentShaderID, 1, &fragAdapter, 0);

@@ -2,7 +2,7 @@
 
 #define MAX_NUM_LIGHTS 10
 
-out VsOut
+in VsOut
 {
   vec3 fragPosition_TangentSpace;
   vec2 textureCoordinate;
@@ -37,7 +37,7 @@ vec3 ambientLight(vec3 ambientColor)
 vec3 diffuseLight(
   vec3 diffuseColor,
   vec3 toLight[MAX_NUM_LIGHTS],
-  float lightColor[MAX_NUM_LIGHTS],
+  vec3 lightColor[MAX_NUM_LIGHTS],
   float localLightPower[MAX_NUM_LIGHTS],
   vec3 normal
 )
@@ -54,13 +54,13 @@ vec3 diffuseLight(
 vec3 specularLight(
   vec3 specularColor,
   vec3 toLight[MAX_NUM_LIGHTS],
-  float lightColor[MAX_NUM_LIGHTS],
+  vec3 lightColor[MAX_NUM_LIGHTS],
   float localLightPower[MAX_NUM_LIGHTS],
   vec3 toCamera,
   vec3 normal
 )
 {
-  float specularLight = 0;
+  vec3 specularLight = vec3(0.0, 0.0, 0.0);
   for(int i = 0; i < numLights; i++)
   {
     vec3 halfDir = normalize(toLight[i] + toCamera);
@@ -72,26 +72,26 @@ vec3 specularLight(
 
 void main()
 {
-  vec4 diffuseTextureColor = texture2D(diffuseTexture, textureCoordinate);
+  vec4 diffuseTextureColor = texture2D(diffuseTexture, vsOut.textureCoordinate);
 
-  vec3 fragNormal_TangentSpace = normalize(texture2D(normalMap, textureCoordinate).rgb * 2.0 - vec3(1.0, 1.0, 1.0));
+  vec3 fragNormal_TangentSpace = normalize(texture2D(normalMap, vsOut.textureCoordinate).rgb * 2.0 - vec3(1.0, 1.0, 1.0));
 
   vec3 toLight_TangentSpace[MAX_NUM_LIGHTS];
   float localLightPower[MAX_NUM_LIGHTS];
   for(int i = 0; i < numLights; i++)
   {
-    toLight_TangentSpace[i] = normalize(lightPosition_TangentSpace[i] - fragPosition_TangentSpace);
-    float lightDistance = distance(lightPosition_TangentSpace[i], fragPosition_TangentSpace);
+    toLight_TangentSpace[i] = normalize(vsOut.lightPosition_TangentSpace[i] - vsOut.fragPosition_TangentSpace);
+    float lightDistance = distance(vsOut.lightPosition_TangentSpace[i], vsOut.fragPosition_TangentSpace);
     localLightPower[i] = calculateLocalLightPower(lightDistance, lightPower[i]);
   }
 
-  vec3 toCamera = normalize(cameraPosition_TangentSpace - fragPosition_TangentSpace);
+  vec3 toCamera = normalize(vsOut.cameraPosition_TangentSpace - vsOut.fragPosition_TangentSpace);
 
-  vec3 ambientLight = ambientLigth(ambientColor);
-  vec3 diffuseLight = diffuseLight(diffuseColor, toLight_TangentSpace, localLightPower, fragNormal_TangentSpace);
-  vec3 specularLight = specularLight(specularColor, toLight_TangentSpace, localLightPower, toCamera, fragNormal_TangentSpace);
+  vec3 ambientLight = ambientLight(ambientColor);
+  vec3 diffuseLight = diffuseLight(diffuseColor, toLight_TangentSpace, lightColor, localLightPower, fragNormal_TangentSpace);
+  vec3 specularLight = specularLight(specularColor, toLight_TangentSpace, lightColor, localLightPower, toCamera, fragNormal_TangentSpace);
 
   vec3 finalLight = clamp(ambientLight + diffuseLight + specularLight, 0.0, 1.0);
 
-  outColor = textureColor * vec4(finalLight,  transparency);
+  outColor = diffuseTextureColor * vec4(finalLight,  transparency);
 }

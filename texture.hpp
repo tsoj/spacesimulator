@@ -21,7 +21,7 @@ struct Texture
     auto error = lodepng::decode(image, width, height, filePath);
     if(error)
   	{
-  		throw std::runtime_error("decoder error " + std::to_string(error) + ": " + lodepng_error_text(error));
+  		throw std::runtime_error("Can't load image ["+std::string(filePath)+"]: decoder error " + std::to_string(error) + ": " + lodepng_error_text(error));
   	}
 
   	return Texture(width, height, image);

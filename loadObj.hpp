@@ -19,12 +19,12 @@ struct Obj
     glm::float_t transparency;
     glm::float_t shininess;
 
-    std::string ambientTexture;
-    std::string diffuseTexture;
-    std::string specularColorTexture;
-    std::string specularHighlightTexture;
-    std::string alphaTexture;
-    std::string normalMap;
+    std::string ambientTexture = "";
+    std::string diffuseTexture = "";
+    std::string specularColorTexture = "";
+    std::string specularHighlightTexture = "";
+    std::string alphaTexture = "";
+    std::string normalMap = "";
 
     static void loadMtl(std::string filePath, std::vector<Mtl>& materials, std::map<std::string, size_t>& mtlIndices)
     {

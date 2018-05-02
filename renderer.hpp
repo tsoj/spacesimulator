@@ -52,9 +52,6 @@ void renderer()
   static glm::float32 lightPower[MAX_NUM_LIGHTS];
   static glm::vec3 lightColor[MAX_NUM_LIGHTS];
   static glm::mat4 worldToLightSpace[MAX_NUM_LIGHTS];
-  static GLuint depthMapID[MAX_NUM_LIGHTS];
-  static GLsizei depthMapWidth[MAX_NUM_LIGHTS];
-  static GLsizei depthMapHeight[MAX_NUM_LIGHTS];
 
   int width, height;
   glfwGetFramebufferSize(Window::window, &width, &height);
@@ -120,7 +117,7 @@ void renderer()
       );
       glUniform3fv(
       	model.lightPosition_UniformLocation,
-      	numLights, lightPosition
+      	numLights, &lightPosition[0][0]
       );
       glUniform1fv(
       	model.lightPower_UniformLocation,
@@ -128,7 +125,7 @@ void renderer()
       );
       glUniform3fv(
       	model.lightColor_UniformLocation,
-      	numLights, lightColor
+      	numLights, &lightColor[0][0]
       );
       glUniform3fv(
       	model.ambientColor_UniformLocation,
