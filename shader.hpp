@@ -12,12 +12,12 @@ GLuint compileShaders(std::string vertFile, std::string fragFile)
 	GLuint programID;
 	GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);
   GLuint fragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
-	std::string vertexShaderCode = readFile(vertFile);
+	std::string vertexShaderCode = IO::readFile(vertFile);
   const char* vertAdapter = vertexShaderCode.data();
   glShaderSource(vertexShaderID, 1, &vertAdapter, 0);
   glCompileShader(vertexShaderID);
 
-  std::string fragmentShaderCode = readFile(fragFile);
+  std::string fragmentShaderCode = IO::readFile(fragFile);
   const char* fragAdapter = fragmentShaderCode.data();
   glShaderSource(fragmentShaderID, 1, &fragAdapter, 0);
   glCompileShader(fragmentShaderID);

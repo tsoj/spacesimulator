@@ -28,7 +28,7 @@ struct Obj
 
     static void loadMtl(std::string filePath, std::vector<Mtl>& materials, std::map<std::string, size_t>& mtlIndices)
     {
-      std::string mtlData = readFile(filePath);
+      std::string mtlData = IO::readFile(filePath);
 
       std::stringstream modelDataStream(mtlData);
     	std::string bufferString;
@@ -123,7 +123,7 @@ struct Obj
 
   static Obj loadObj(std::string filePath)
   {
-    std::string modelData = readFile(filePath);
+    std::string modelData = IO::readFile(filePath);
 
     std::vector<glm::vec3> positions = std::vector<glm::vec3>();
     std::vector<glm::vec2> textureCoordinates = std::vector<glm::vec2>();

@@ -3,7 +3,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "renderable.hpp"
-#include "lightSource.hpp"
+#include "light.hpp"
 #include "ecs.hpp"
 #include "camera.hpp"
 #include "position.hpp"
@@ -13,16 +13,16 @@
 
 const GLuint MAX_NUM_LIGHTS = 10;
 
-int getImportentLightSources(
+int getImportentLights(
   /*Position localPosition,*/
   glm::vec3 lightPosition[MAX_NUM_LIGHTS],
   glm::float32 lightPower[MAX_NUM_LIGHTS],
   glm::vec3 lightColor[MAX_NUM_LIGHTS]
 )
 {
-  //TODO: use only the light sources with the highest local light power
+  //TODO: use only the light s with the highest local light power
   size_t i = 0;
-  for(auto entity : ecs::Iterator<LightSource>())
+  for(auto entity : ecs::Iterator<Light>())
   {
     if(i == MAX_NUM_LIGHTS)
     {
@@ -37,8 +37,8 @@ int getImportentLightSources(
       lightPosition[i] = Camera::position.coordinates;
     }
 
-    lightPower[i] = entity.getComponent<LightSource>().power;
-    lightColor[i] = entity.getComponent<LightSource>().color;
+    lightPower[i] = entity.getComponent<Light>().power;
+    lightColor[i] = entity.getComponent<Light>().color;
 
     i++;
   }
@@ -47,6 +47,7 @@ int getImportentLightSources(
 
 void renderer()
 {
+
   static glm::vec3 lightPosition[MAX_NUM_LIGHTS];
   static glm::float32 lightPower[MAX_NUM_LIGHTS];
   static glm::vec3 lightColor[MAX_NUM_LIGHTS];
@@ -55,10 +56,11 @@ void renderer()
   static GLsizei depthMapWidth[MAX_NUM_LIGHTS];
   static GLsizei depthMapHeight[MAX_NUM_LIGHTS];
 
-
-
   int width, height;
   glfwGetFramebufferSize(Window::window, &width, &height);
+  glViewport(0, 0, width, height);
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
   glm::mat4 worldToProjection =
     glm::perspective(glm::radians(Camera::fieldOfView), GLfloat(width)/GLfloat(height), 0.1f, 100.0f) *
     glm::lookAt(Camera::position.coordinates, Camera::position.coordinates + Camera::viewDirection, Camera::cameraUp);
@@ -91,7 +93,7 @@ void renderer()
 
     for(auto& model : entity.getComponent<Renderable>().models)
     {
-      int numLights = getImportentLightSources(
+      int numLights = getImportentLights(
         /*entity.getComponent<Position>(),*/
         lightPosition, lightPower, lightColor
       );
@@ -160,4 +162,5 @@ void renderer()
       glDrawArrays(GL_TRIANGLES, 0, model.vertices.size());
     }
   }
+  glfwSwapBuffers(Window::window);
 }

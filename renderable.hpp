@@ -135,5 +135,6 @@ struct Renderable
       models[i].normalMap_UniformLocation = glGetUniformLocation(models[i].programID, "normalMap");
     }
   }
+  
   std::vector<Model> models = std::vector<Model>();
 };

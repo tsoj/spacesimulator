@@ -41,5 +41,5 @@ struct Texture
   	return textureID;
   }
 };
-Texture defaultTexture = Texture(1, 1, {255, 255, 255, 255});
-Texture defaultNormalMap = Texture(1, 1, {128, 128, 255, 255});
+const Texture defaultTexture = Texture(1, 1, {255, 255, 255, 255});
+const Texture defaultNormalMap = Texture(1, 1, {128, 128, 255, 255});
