@@ -12,7 +12,7 @@ uniform mat4 worldToProjection;
 uniform mat4 worldToLight[MAX_NUM_LIGHTS];
 
 uniform vec3 cameraPosition_WorldSpace;
-uniform vec3 lightPosition_WorldSpace;
+uniform vec3 lightPosition_WorldSpace[MAX_NUM_LIGHTS];
 uniform int numLights;
 
 out VsOut
@@ -42,7 +42,7 @@ void main()
   vsOut.cameraPosition_TangentSpace = worldToTangentSpace * cameraPosition_WorldSpace;
   for(int i = 0; i < numLights; i++)
   {
-    vsOut.lightPosition_TangentSpace[i] = worldToTangentSpace * lightPosition_WorldSpace;
+    vsOut.lightPosition_TangentSpace[i] = worldToTangentSpace * lightPosition_WorldSpace[i];
     vsOut.fragPosition_LightSpace[i] = worldToLight[i] * vec4(vertPosition_WorldSpace, 1.0);
   }
   vsOut.textureCoordinate = textureCoordinate;

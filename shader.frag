@@ -65,7 +65,7 @@ vec3 specularLight(
   {
     vec3 halfDir = normalize(toLight[i] + toCamera);
     float specAngle = clamp(dot(halfDir, normal), 0.0, 1.0);
-    specularLight += lightColor[i] * pow(specAngle, 20) * localLightPower[i];//TODO:shininess
+    specularLight += lightColor[i] * pow(specAngle, shininess) * localLightPower[i];
   }
   return specularColor * specularLight;
 }

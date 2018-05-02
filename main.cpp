@@ -19,16 +19,14 @@ int main()
   ecs::SystemManager::addSystem(renderer, std::chrono::milliseconds(0));
 
   auto spaceship = ecs::Entity::createEntity();
-  auto plane = ecs::Entity::createEntity();
-  auto light = ecs::Entity::createEntity();
-
   spaceship.createComponent<Renderable>();
   spaceship.createComponent<Position>();
   spaceship.createComponent<Orientation>();
   spaceship.getComponent<Renderable>().init("spaceboat.obj", "shader.vert", "shader.frag");
   spaceship.getComponent<Position>().coordinates = glm::vec3(0.0, 5.0, -20.0);
-  spaceship.getComponent<Orientation>().rotationMatrix = glm::mat4(1.0);
+  spaceship.getComponent<Orientation>().rotationMatrix = glm::rotate(glm::mat4(), glm::radians(90.0f), glm::vec3(0.0, 1.0, 0.0));
 
+  auto plane = ecs::Entity::createEntity();
   plane.createComponent<Renderable>();
   plane.createComponent<Position>();
   plane.createComponent<Orientation>();
@@ -36,12 +34,22 @@ int main()
   plane.getComponent<Position>().coordinates = glm::vec3(0.0, -5.0, -20.0);
   plane.getComponent<Orientation>().rotationMatrix = glm::mat4(1.0);
 
+  auto light = ecs::Entity::createEntity();
   light.createComponent<Light>();
   light.createComponent<Position>();
-  light.getComponent<Light>().color = glm::vec3(1.0, 1.0, 1.0);
-  light.getComponent<Light>().power = 10000000.0;
+  light.getComponent<Light>().color = glm::vec3(1.0, 0.0, 0.0);
+  light.getComponent<Light>().power = 10000.0;
   light.getComponent<Light>().worldToLightSpace = glm::mat4(1.0);//TODO:
-  light.getComponent<Position>().coordinates = glm::vec3(0.0, 20.0, -5.0);
+  light.getComponent<Position>().coordinates = glm::vec3(0.0, 20.0, -20.0);
+
+
+  auto light2 = ecs::Entity::createEntity();
+  light2.createComponent<Light>();
+  light2.createComponent<Position>();
+  light2.getComponent<Light>().color = glm::vec3(0.0, 1.0, 0.0);
+  light2.getComponent<Light>().power = 1000.0;
+  light2.getComponent<Light>().worldToLightSpace = glm::mat4(1.0);//TODO:
+  light2.getComponent<Position>().coordinates = glm::vec3(0.0, 0.0, -20.0);
 
   Camera::cameraUp = glm::vec3(0.0, 1.0, 0.0);
   Camera::position = Position{glm::vec3(0.0, 0.0, 0.0)};
