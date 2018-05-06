@@ -193,14 +193,15 @@ void renderer()
     }
   }
   glfwSwapBuffers(Window::window);
-  static double lastTime = 0.0;
-  static size_t nbFrames = 0;
-  double currentTime = glfwGetTime();
-  nbFrames++;
-  if ( currentTime - lastTime >= 1.0 ){ // If last prinf() was more than 1 sec ago
-    // printf and reset timer
-    printf("%f ms/frame\n", 1000.0/double(nbFrames));
-    nbFrames = 0;
-    lastTime = glfwGetTime();
+
+  static std::chrono::high_resolution_clock::time_point lastTime = std::chrono::high_resolution_clock::now();
+  static size_t frames = 0;
+  frames++;
+  std::chrono::high_resolution_clock::time_point currentTime = std::chrono::high_resolution_clock::now();
+  if(std::chrono::duration_cast<std::chrono::milliseconds>(currentTime - lastTime).count() >= 1000)
+  {
+    std::cout<< 1000.0/double(frames) << " ms/frame" << std::endl;;
+    frames = 0;
+    lastTime = std::chrono::high_resolution_clock::now();
   }
 }
