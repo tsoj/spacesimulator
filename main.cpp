@@ -22,7 +22,7 @@ int main()
   spaceship.createComponent<Renderable>();
   spaceship.createComponent<Position>();
   spaceship.createComponent<Orientation>();
-  spaceship.getComponent<Renderable>().init("model/spaceboat.obj", "shader/shader.vert", "shader/shader.frag");
+  spaceship.getComponent<Renderable>().init("model/spaceboat.obj", "shader/phong.vert", "shader/phong.frag");
   spaceship.getComponent<Position>().coordinates = glm::vec3(0.0, 5.0, -20.0);
   spaceship.getComponent<Orientation>().rotationMatrix = glm::rotate(glm::mat4(), glm::radians(90.0f), glm::vec3(0.0, 1.0, 0.0));
 
@@ -30,7 +30,7 @@ int main()
   plane.createComponent<Renderable>();
   plane.createComponent<Position>();
   plane.createComponent<Orientation>();
-  plane.getComponent<Renderable>().init("model/plane.obj", "shader/shader.vert", "shader/shader.frag");
+  plane.getComponent<Renderable>().init("model/plane.obj", "shader/phong.vert", "shader/phong.frag");
   plane.getComponent<Position>().coordinates = glm::vec3(0.0, -5.0, -20.0);
   plane.getComponent<Orientation>().rotationMatrix = glm::mat4(1.0);
 

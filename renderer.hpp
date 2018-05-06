@@ -11,23 +11,58 @@
 #include "window.hpp"
 
 
-const GLuint MAX_NUM_LIGHTS = 10;
+const int MAX_NUM_LIGHTS = 10;
 
-int getImportentLights(
-  /*Position localPosition,*/
-  glm::vec3 lightPosition[MAX_NUM_LIGHTS],
-  glm::float32 lightPower[MAX_NUM_LIGHTS],
-  glm::vec3 lightColor[MAX_NUM_LIGHTS]
-)
+int getMostInfluentialLights(Position localPosition, ecs::Entity influentialLights[MAX_NUM_LIGHTS])
 {
-  //TODO: use only the light s with the highest local light power
-  size_t i = 0;
+  static glm::float32 localLightPower[MAX_NUM_LIGHTS];
+  for(auto& localLightPower : localLightPower)
+  {
+    localLightPower = 0.0;
+  }
+
+  static void* tmp = malloc(MAX_NUM_LIGHTS*(sizeof(ecs::Entity)>=sizeof(glm::float32) ? sizeof(ecs::Entity) : sizeof(glm::float32)));
+  int numLights = 0;
   for(auto entity : ecs::Iterator<Light>())
   {
-    if(i == MAX_NUM_LIGHTS)
+    glm::float32 currentLocalLightPower = Light::localLightInfluence(entity, localPosition);
+    for(size_t i = 0; i<MAX_NUM_LIGHTS; i++)
     {
-      break;
+      if(localLightPower[i]<currentLocalLightPower)
+      {
+        if(i<MAX_NUM_LIGHTS-1)
+        {
+          memcpy(tmp, &localLightPower[i], (MAX_NUM_LIGHTS-i-1)*sizeof(glm::float32));
+          memcpy(&localLightPower[i+1], tmp, (MAX_NUM_LIGHTS-i-1)*sizeof(glm::float32));
+
+          memcpy(tmp, &influentialLights[i], (MAX_NUM_LIGHTS-i-1)*sizeof(ecs::Entity));
+          memcpy(&influentialLights[i+1], tmp, (MAX_NUM_LIGHTS-i-1)*sizeof(ecs::Entity));
+        }
+        localLightPower[i] = currentLocalLightPower;
+        influentialLights[i] = entity;
+        numLights++;
+        break;
+      }
     }
+  }
+  return numLights>=MAX_NUM_LIGHTS?MAX_NUM_LIGHTS:numLights;
+}
+
+int getLightData(
+  Position localPosition,
+  glm::vec3 lightPosition[MAX_NUM_LIGHTS],
+  glm::float32 lightPower[MAX_NUM_LIGHTS],
+  glm::vec3 lightColor[MAX_NUM_LIGHTS],
+  glm::mat4 worldToLightSpace[MAX_NUM_LIGHTS],
+  GLuint depthMapID[MAX_NUM_LIGHTS]
+)
+{
+  static ecs::Entity influentialLights[MAX_NUM_LIGHTS];
+  int numLights = getMostInfluentialLights(localPosition, influentialLights);
+
+  for(int i = 0; i<numLights; i++)
+  {
+    ecs::Entity& entity = influentialLights[i];
     if(entity.hasComponents<Position>())
     {
       lightPosition[i] = entity.getComponent<Position>().coordinates;
@@ -39,10 +74,8 @@ int getImportentLights(
 
     lightPower[i] = entity.getComponent<Light>().power;
     lightColor[i] = entity.getComponent<Light>().color;
-
-    i++;
   }
-  return i;
+  return numLights;
 }
 
 void renderer()
@@ -52,6 +85,13 @@ void renderer()
   static glm::float32 lightPower[MAX_NUM_LIGHTS];
   static glm::vec3 lightColor[MAX_NUM_LIGHTS];
   static glm::mat4 worldToLightSpace[MAX_NUM_LIGHTS];
+  static GLuint depthMapID[MAX_NUM_LIGHTS];
+
+  int numLights = getLightData(
+    Camera::position,
+    lightPosition, lightPower, lightColor,
+    worldToLightSpace, depthMapID
+  );
 
   int width, height;
   glfwGetFramebufferSize(Window::window, &width, &height);
@@ -64,8 +104,6 @@ void renderer()
 
   for(auto entity : ecs::Iterator<Renderable>())
   {
-    //TODO: generate depthMap
-
     glm::mat4 modelRotation;
     if(entity.hasComponents<Orientation>())
     {
@@ -90,11 +128,6 @@ void renderer()
 
     for(auto& model : entity.getComponent<Renderable>().models)
     {
-      int numLights = getImportentLights(
-        /*entity.getComponent<Position>(),*/
-        lightPosition, lightPower, lightColor
-      );
-
       glBindVertexArray(model.vertexArrayObjectID);
 
 			glUseProgram(model.programID);
@@ -160,4 +193,14 @@ void renderer()
     }
   }
   glfwSwapBuffers(Window::window);
+  static double lastTime = 0.0;
+  static size_t nbFrames = 0;
+  double currentTime = glfwGetTime();
+  nbFrames++;
+  if ( currentTime - lastTime >= 1.0 ){ // If last prinf() was more than 1 sec ago
+    // printf and reset timer
+    printf("%f ms/frame\n", 1000.0/double(nbFrames));
+    nbFrames = 0;
+    lastTime = glfwGetTime();
+  }
 }
