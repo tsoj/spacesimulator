@@ -11,7 +11,7 @@ namespace Gamestate
     Gamestate newGamestate;
   };
 
-  void exitGame(const ChangeGamestate& changeGamestate)
+  inline void exitGame(const ChangeGamestate& changeGamestate)
   {
     if(changeGamestate.newGamestate == Gamestate::Exiting)
     {

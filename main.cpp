@@ -1,18 +1,22 @@
 #include <iostream>
 #include <chrono>
 
+#include <glm/gtc/matrix_transform.hpp>
+
 #include "window.hpp"
 #include "ecs.hpp"
 #include "input.hpp"
 #include "gamestate.hpp"
 #include "renderer.hpp"
 #include "renderable.hpp"
-
-void hi(){}
+#include "light.hpp"
+#include "orientation.hpp"
+#include "camera.hpp"
 
 int main()
 {
-  Window::initWindow();
+  Window::init();
+  Light::init();
 
   ecs::SystemManager::addSystem(Input::catchInput, std::chrono::milliseconds(0));
   ecs::SystemManager::addSystem(Gamestate::exitGame);
@@ -24,7 +28,7 @@ int main()
   spaceship.createComponent<Orientation>();
   spaceship.getComponent<Renderable>().init("model/spaceboat.obj", "shader/phong.vert", "shader/phong.frag");
   spaceship.getComponent<Position>().coordinates = glm::vec3(0.0, 5.0, -20.0);
-  spaceship.getComponent<Orientation>().rotationMatrix = glm::rotate(glm::mat4(), glm::radians(90.0f), glm::vec3(0.0, 1.0, 0.0));
+  spaceship.getComponent<Orientation>().rotationMatrix = glm::rotate(glm::mat4(), glm::radians(200.0f), glm::vec3(0.0, 1.0, 0.0));
 
   auto plane = ecs::Entity::createEntity();
   plane.createComponent<Renderable>();
@@ -39,17 +43,21 @@ int main()
   light.createComponent<Position>();
   light.getComponent<Light>().color = glm::vec3(1.0, 0.0, 0.0);
   light.getComponent<Light>().power = 10000.0;
-  light.getComponent<Light>().worldToLightSpace = glm::mat4(1.0);//TODO:
   light.getComponent<Position>().coordinates = glm::vec3(0.0, 20.0, -20.0);
-
 
   auto light2 = ecs::Entity::createEntity();
   light2.createComponent<Light>();
   light2.createComponent<Position>();
   light2.getComponent<Light>().color = glm::vec3(0.0, 1.0, 0.0);
   light2.getComponent<Light>().power = 1000.0;
-  light2.getComponent<Light>().worldToLightSpace = glm::mat4(1.0);//TODO:
   light2.getComponent<Position>().coordinates = glm::vec3(0.0, 0.0, -20.0);
+
+  auto light3 = ecs::Entity::createEntity();
+  light3.createComponent<Light>();
+  light3.createComponent<Position>();
+  light3.getComponent<Light>().color = glm::vec3(0.0, 0.0, 1.0);
+  light3.getComponent<Light>().power = 1000.0;
+  light3.getComponent<Position>().coordinates = glm::vec3(10.0, 0.0, -20.0);
 
   Camera::cameraUp = glm::vec3(0.0, 1.0, 0.0);
   Camera::position = Position{glm::vec3(0.0, 0.0, 0.0)};
@@ -60,5 +68,6 @@ int main()
   {
     ecs::SystemManager::runSystems();
   }
+  //TODO: proper deinitialization
   return 0;
 }

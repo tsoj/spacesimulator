@@ -23,6 +23,23 @@ uniform float transparency;
 uniform float shininess;
 uniform sampler2D diffuseTexture;
 uniform sampler2D normalMap;
+uniform sampler2D depthMap;
+
+float shadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
+{
+  // perform perspective divide
+  vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+  // transform to [0,1] range
+  projCoords = projCoords * 0.5 + 0.5;
+  // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+  float closestDepth = texture2D(depthMap, projCoords.xy).r;
+  // get depth of current fragment from light's perspective
+  float currentDepth = projCoords.z;
+  // check whether current frag pos is in shadow
+  float shadow = currentDepth - 0.0001 > closestDepth  ? 1.0 : 0.0;
+
+  return shadow;
+}
 
 float calculateLocalLightPower(float lightDistance, float lightPower)
 {
@@ -91,7 +108,9 @@ void main()
   vec3 diffuseLight = diffuseLight(diffuseColor, toLight_TangentSpace, lightColor, localLightPower, fragNormal_TangentSpace);
   vec3 specularLight = specularLight(specularColor, toLight_TangentSpace, lightColor, localLightPower, toCamera, fragNormal_TangentSpace);
 
-  vec3 finalLight = clamp(ambientLight + diffuseLight + specularLight, 0.0, 1.0);
+  vec3 finalLight = clamp(ambientLight +
+    (diffuseLight + specularLight)*(1.0 - shadowCalculation(vsOut.fragPosition_LightSpace[0], fragNormal_TangentSpace, normalize(vsOut.lightPosition_TangentSpace[0] - vsOut.fragPosition_TangentSpace)))
+    , 0.0, 1.0);
 
   outColor = diffuseTextureColor * vec4(finalLight,  transparency);
 }

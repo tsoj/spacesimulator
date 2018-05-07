@@ -5,14 +5,18 @@
 
 #include "ecs.hpp"
 #include "position.hpp"
+#include "shader.hpp"
+
 struct Light
 {
   glm::float32 power;
   glm::vec3 color;
-  glm::mat4 worldToLightSpace;
-  GLuint depthMapID;
-  GLsizei depthMapWidth;
-  GLsizei depthMapHeight;
+
+  inline static GLuint depthMapProgramID = -1;
+  static void init()
+  {
+    Light::depthMapProgramID = compileShaders("shader/depthMap.vert", "shader/depthMap.frag");
+  }
 
   static glm::float32 localLightInfluence(ecs::Entity light, Position localPosition)
   {

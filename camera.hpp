@@ -6,8 +6,8 @@
 
 namespace Camera
 {
-  Position position;
-  glm::vec3 viewDirection;
-  glm::vec3 cameraUp;
-  glm::float32 fieldOfView; // degrees
+  inline Position position;
+  inline glm::vec3 viewDirection;
+  inline glm::vec3 cameraUp;
+  inline glm::float32 fieldOfView; // degrees
 }

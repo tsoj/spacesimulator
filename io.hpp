@@ -4,7 +4,7 @@
 
 namespace IO
 {
-  std::string readFile(std::string filePath)
+  inline std::string readFile(std::string filePath)
   {
     std::string ret = "";
     std::string tmp;

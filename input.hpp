@@ -6,7 +6,7 @@
 
 namespace Input
 {
-  void catchInput()
+  inline void catchInput()
   {
     glfwPollEvents();
     if(glfwWindowShouldClose(Window::window))

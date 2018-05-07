@@ -8,8 +8,8 @@
 
 namespace Window
 {
-  GLFWwindow* window;
-  void initWindow()
+  inline GLFWwindow* window;
+  inline void init()
   {
     static std::vector<const char*> requiredExtensions =
     {

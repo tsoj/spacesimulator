@@ -7,7 +7,7 @@
 
 #include "io.hpp"
 
-GLuint compileShaders(std::string vertFile, std::string fragFile)
+inline GLuint compileShaders(std::string vertFile, std::string fragFile)
 {
 	GLuint programID;
 	GLuint vertexShaderID = glCreateShader(GL_VERTEX_SHADER);

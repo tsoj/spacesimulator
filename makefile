@@ -1,9 +1,9 @@
 CC = clang++
-CFLAGS = -std=c++14 -O3 -Wall -Wextra
-LDFLAGS = -std=c++14 -O3 -Wall -Wextra -lGLEW -lGLU -lGL -lglfw3 -lX11 -lXrandr -lXxf86vm -lXinerama -lXcursor -pthread -ldl
+CFLAGS = -std=c++17 -O3 -Wall -Wextra
+LDFLAGS = -std=c++17 -O3 -Wall -Wextra -lGLEW -lGLU -lGL -lglfw3 -lX11 -lXrandr -lXxf86vm -lXinerama -lXcursor -pthread -ldl
 NAME = OpenglTest
 BIN_FILE_PATH = ./bin/
-CPP = main.cpp lodepng.cpp
+CPP = main.cpp lodepng.cpp renderer.cpp
 
 OBJ = $(CPP:%.cpp=%.o)
 OBJ_DEST = $(CPP:%.cpp=$(BIN_FILE_PATH)%.o)
