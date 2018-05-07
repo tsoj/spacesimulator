@@ -1,5 +1,7 @@
 #include "renderer.hpp"
 
+#include <array>
+
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "renderable.hpp"
@@ -9,9 +11,10 @@
 #include "position.hpp"
 #include "orientation.hpp"
 #include "window.hpp"
-#include <array>
+#include "renderTexture.hpp"
 
 const int MAX_NUM_LIGHTS = 10;
+const GLuint SHADOW_WIDTH=1024, SHADOW_HEIGHT=1024;
 
 int getMostInfluentialLights(Position localPosition, ecs::Entity influentialLights[MAX_NUM_LIGHTS])
 {
@@ -108,12 +111,12 @@ int getLightData(
   	glReadBuffer(GL_NONE);
     int width, height;
     glfwGetFramebufferSize(Window::window, &width, &height);
-    glViewport(0, 0, width, height);
+    glViewport(0, 0, SHADOW_WIDTH, SHADOW_WIDTH);
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    //TODO: !!!
+    //TODO: adjust perspectiv and lookat so that we get the best shadow quality
     worldToLight[i] =
-      glm::perspective(glm::radians(90.0f), GLfloat(width)/GLfloat(height), 0.1f, 100.0f) *
+      glm::perspective(glm::radians(90.0f), GLfloat(SHADOW_WIDTH)/GLfloat(SHADOW_HEIGHT), 0.1f, 1000.0f) *
       glm::lookAt(lightPosition[i], lightPosition[i] + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
 
     for(auto entity : ecs::Iterator<Renderable>())
@@ -127,13 +130,13 @@ int getLightData(
   			glUseProgram(Light::depthMapProgramID);
 
         glUniformMatrix4fv(
-        	model.modelToWorld_UniformLocation,
-        	1, GL_FALSE, &(modelToWorld[0][0])
-        );
-        glUniformMatrix4fv(
-        	model.worldToProjection_UniformLocation,
-        	1, GL_FALSE, &(worldToLight[i][0][0])
-        );
+					glGetUniformLocation(Light::depthMapProgramID, "modelToWorld"),// TODO store uniform location anywhere
+					1, GL_FALSE, &(modelToWorld[0][0])
+				);
+				glUniformMatrix4fv(
+					glGetUniformLocation(Light::depthMapProgramID, "worldToProjection"),// TODO store uniform location anywhere
+					1, GL_FALSE, &(worldToLight[i][0][0])
+				);
 
         glDrawArrays(GL_TRIANGLES, 0, model.vertices.size());
       }
@@ -155,7 +158,6 @@ void renderer()
   auto initTextures = []()
   {
     std::array<GLuint, MAX_NUM_LIGHTS> ret;
-    const GLuint SHADOW_WIDTH=1024, SHADOW_HEIGHT=1024;
     for(size_t i = 0; i< MAX_NUM_LIGHTS; i++)
     {
       glGenTextures(1, &ret[i]);
@@ -257,7 +259,7 @@ void renderer()
       glBindTexture(GL_TEXTURE_2D, model.normalMapID);
 
       glActiveTexture(GL_TEXTURE2);
-			glUniform1i(glGetUniformLocation(model.programID, "depthMap"), 2);
+			glUniform1i(model.depthMap_UniformLocation, 2);
 			glBindTexture(GL_TEXTURE_2D, depthMapID[0]);
 
 

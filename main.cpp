@@ -27,8 +27,16 @@ int main()
   spaceship.createComponent<Position>();
   spaceship.createComponent<Orientation>();
   spaceship.getComponent<Renderable>().init("model/spaceboat.obj", "shader/phong.vert", "shader/phong.frag");
-  spaceship.getComponent<Position>().coordinates = glm::vec3(0.0, 5.0, -20.0);
+  spaceship.getComponent<Position>().coordinates = glm::vec3(0.0, -2.0, -20.0);
   spaceship.getComponent<Orientation>().rotationMatrix = glm::rotate(glm::mat4(), glm::radians(200.0f), glm::vec3(0.0, 1.0, 0.0));
+
+  auto spaceship2 = ecs::Entity::createEntity();
+  spaceship2.createComponent<Renderable>();
+  spaceship2.createComponent<Position>();
+  spaceship2.createComponent<Orientation>();
+  spaceship2.getComponent<Renderable>().init("model/spaceboat.obj", "shader/phong.vert", "shader/phong.frag");
+  spaceship2.getComponent<Position>().coordinates = glm::vec3(6.0, 2.0, -20.0);
+  spaceship2.getComponent<Orientation>().rotationMatrix = glm::rotate(glm::mat4(), glm::radians(300.0f), glm::vec3(0.0, 1.0, 0.0));
 
   auto plane = ecs::Entity::createEntity();
   plane.createComponent<Renderable>();
@@ -42,10 +50,10 @@ int main()
   light.createComponent<Light>();
   light.createComponent<Position>();
   light.getComponent<Light>().color = glm::vec3(1.0, 0.0, 0.0);
-  light.getComponent<Light>().power = 10000.0;
-  light.getComponent<Position>().coordinates = glm::vec3(0.0, 20.0, -20.0);
+  light.getComponent<Light>().power = 100000.0;
+  light.getComponent<Position>().coordinates = glm::vec3(0.0, 50.0, -20.0);
 
-  auto light2 = ecs::Entity::createEntity();
+  /*auto light2 = ecs::Entity::createEntity();
   light2.createComponent<Light>();
   light2.createComponent<Position>();
   light2.getComponent<Light>().color = glm::vec3(0.0, 1.0, 0.0);
@@ -57,7 +65,7 @@ int main()
   light3.createComponent<Position>();
   light3.getComponent<Light>().color = glm::vec3(0.0, 0.0, 1.0);
   light3.getComponent<Light>().power = 1000.0;
-  light3.getComponent<Position>().coordinates = glm::vec3(10.0, 0.0, -20.0);
+  light3.getComponent<Position>().coordinates = glm::vec3(10.0, 0.0, -20.0);*/
 
   Camera::cameraUp = glm::vec3(0.0, 1.0, 0.0);
   Camera::position = Position{glm::vec3(0.0, 0.0, 0.0)};

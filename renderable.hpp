@@ -126,7 +126,7 @@ struct Renderable
       models[i].cameraPosition_UniformLocation = glGetUniformLocation(models[i].programID, "cameraPosition_WorldSpace");
       models[i].numLights_UniformLocation = glGetUniformLocation(models[i].programID, "numLights");
       models[i].worldToLight_UniformLocation = glGetUniformLocation(models[i].programID, "worldToLight");
-      models[i].depthMap_UniformLocation = glGetUniformLocation(models[i].programID, "depthMap_UniformLocation");
+      models[i].depthMap_UniformLocation = glGetUniformLocation(models[i].programID, "depthMap");
       models[i].lightPosition_UniformLocation = glGetUniformLocation(models[i].programID, "lightPosition_WorldSpace");
       models[i].lightPower_UniformLocation = glGetUniformLocation(models[i].programID, "lightPower");
       models[i].lightColor_UniformLocation = glGetUniformLocation(models[i].programID, "lightColor");
