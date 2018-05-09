@@ -23,16 +23,16 @@ uniform float transparency;
 uniform float shininess;
 uniform sampler2D diffuseTexture;
 uniform sampler2D normalMap;
-uniform sampler2D depthMap;
+uniform sampler2D depthMap[MAX_NUM_LIGHTS];
 
-float shadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
+float shadowCalculation(vec4 fragPosition_LightSpace, int depthMapIndex)
 {
   // perform perspective divide
-  vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+  vec3 projCoords = fragPosition_LightSpace.xyz / fragPosition_LightSpace.w;
   // transform to [0,1] range
   projCoords = projCoords * 0.5 + 0.5;
   // get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-  float closestDepth = texture2D(depthMap, projCoords.xy).r;
+  float closestDepth = texture2D(depthMap[depthMapIndex], projCoords.xy).r;
   // get depth of current fragment from light's perspective
   float currentDepth = projCoords.z;
   // check whether current frag pos is in shadow
@@ -99,7 +99,8 @@ void main()
   {
     toLight_TangentSpace[i] = normalize(vsOut.lightPosition_TangentSpace[i] - vsOut.fragPosition_TangentSpace);
     float lightDistance = distance(vsOut.lightPosition_TangentSpace[i], vsOut.fragPosition_TangentSpace);
-    localLightPower[i] = calculateLocalLightPower(lightDistance, lightPower[i]);
+    localLightPower[i] =
+      calculateLocalLightPower(lightDistance, lightPower[i])*(1.0 - shadowCalculation(vsOut.fragPosition_LightSpace[i], i));
   }
 
   vec3 toCamera = normalize(vsOut.cameraPosition_TangentSpace - vsOut.fragPosition_TangentSpace);
@@ -109,7 +110,7 @@ void main()
   vec3 specularLight = specularLight(specularColor, toLight_TangentSpace, lightColor, localLightPower, toCamera, fragNormal_TangentSpace);
 
   vec3 finalLight = clamp(ambientLight +
-    (diffuseLight + specularLight)*(1.0 - shadowCalculation(vsOut.fragPosition_LightSpace[0], fragNormal_TangentSpace, normalize(vsOut.lightPosition_TangentSpace[0] - vsOut.fragPosition_TangentSpace)))
+    (diffuseLight + specularLight)
     , 0.0, 1.0);
 
   outColor = diffuseTextureColor * vec4(finalLight,  transparency);

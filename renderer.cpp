@@ -155,7 +155,7 @@ void renderer()
   static glm::vec3 lightColor[MAX_NUM_LIGHTS];
   static glm::mat4 worldToLight[MAX_NUM_LIGHTS];
 
-  auto initTextures = []()
+  static auto initDepthMaps = []()
   {
     std::array<GLuint, MAX_NUM_LIGHTS> ret;
     for(size_t i = 0; i< MAX_NUM_LIGHTS; i++)
@@ -170,7 +170,7 @@ void renderer()
     }
     return ret;
   };
-  static std::array<GLuint, MAX_NUM_LIGHTS> depthMapID = initTextures();
+  static std::array<GLuint, MAX_NUM_LIGHTS> depthMapID = initDepthMaps();
 
   int numLights = getLightData(
     Camera::position,
@@ -258,9 +258,16 @@ void renderer()
       glActiveTexture(GL_TEXTURE1);
       glBindTexture(GL_TEXTURE_2D, model.normalMapID);
 
-      glActiveTexture(GL_TEXTURE2);
-			glUniform1i(model.depthMap_UniformLocation, 2);
-			glBindTexture(GL_TEXTURE_2D, depthMapID[0]);
+      //glUniform1i(model.depthMap_UniformLocation, 2);
+      GLint tmp[MAX_NUM_LIGHTS];
+      for(GLint i = 0; i<MAX_NUM_LIGHTS; i++)
+      {
+        tmp[i] = 2+i;
+
+        glActiveTexture(GL_TEXTURE2+i);
+  			glBindTexture(GL_TEXTURE_2D, depthMapID[i]);
+      }
+      glUniform1iv(model.depthMap_UniformLocation,  MAX_NUM_LIGHTS,  tmp);
 
 
       glDrawArrays(GL_TRIANGLES, 0, model.vertices.size());
