@@ -60,12 +60,12 @@ int main()
   light2.getComponent<Light>().power = 100000.0;
   light2.getComponent<Position>().coordinates = glm::vec3(0.0, 0.0, 0.0);
 
-  auto light3 = ecs::Entity::createEntity();
+  /*auto light3 = ecs::Entity::createEntity();
   light3.createComponent<Light>();
   light3.createComponent<Position>();
   light3.getComponent<Light>().color = glm::vec3(0.0, 0.0, 1.0);
   light3.getComponent<Light>().power = 100000.0;
-  light3.getComponent<Position>().coordinates = glm::vec3(10.0, 0.0, -20.0);
+  light3.getComponent<Position>().coordinates = glm::vec3(10.0, 0.0, -20.0);*/
 
   Camera::cameraUp = glm::vec3(0.0, 1.0, 0.0);
   Camera::position = Position{glm::vec3(0.0, 0.0, 0.0)};
