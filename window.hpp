@@ -57,7 +57,8 @@ namespace Window
 
     glEnable(GL_DEPTH_TEST);
   	glEnable(GL_CULL_FACE);
-  	//glFrontFace(GL_CW);
+    glCullFace(GL_FRONT);
+  	glFrontFace(GL_CW);
 
   	glClearColor(0.1f, 0.2f, 0.4f, 1.0f);
   }

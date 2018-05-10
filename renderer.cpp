@@ -14,7 +14,7 @@
 #include "renderTexture.hpp"
 
 const int MAX_NUM_LIGHTS = 10;
-const GLuint SHADOW_WIDTH=1024, SHADOW_HEIGHT=1024;
+const GLuint SHADOW_WIDTH=2048, SHADOW_HEIGHT=2048;
 
 int getMostInfluentialLights(Position localPosition, ecs::Entity influentialLights[MAX_NUM_LIGHTS])
 {
@@ -75,6 +75,52 @@ glm::mat4 getModelToWorld(ecs::Entity entity)
   return modelTranslation * modelRotation;
 }
 
+void getDataForLightPerspective(
+  glm::float32* angle,
+  glm::float32* farPlane,
+  glm::vec3* lightLookAt,
+  glm::vec3* lightUp,
+  glm::vec3 cameraViewFrustumCoords[8],
+  glm::vec3 cameraPosition,
+  glm::vec3 cameraLookAt,
+  glm::vec3 lightPosition
+)
+{
+  *lightUp = glm::cross(cameraLookAt-cameraPosition, cameraPosition-lightPosition);
+  *lightLookAt = glm::normalize(
+    cameraViewFrustumCoords[0]+
+    cameraViewFrustumCoords[1]+
+    cameraViewFrustumCoords[2]+
+    cameraViewFrustumCoords[3]+
+    cameraViewFrustumCoords[4]+
+    cameraViewFrustumCoords[5]+
+    cameraViewFrustumCoords[6]+
+    cameraViewFrustumCoords[7]-
+    lightPosition*8.0f
+  );
+  glm::float32 biggestAngle = 0.0;
+  *farPlane = 0.0;
+
+  for(size_t i = 0; i<8; i++)
+  {
+    glm::float32 currentAngle =
+      glm::acos(
+        glm::abs(glm::dot(*lightLookAt, cameraViewFrustumCoords[i]-lightPosition))/
+        (glm::length(*lightLookAt)*glm::length(cameraViewFrustumCoords[i]-lightPosition))
+      );
+    if(currentAngle>biggestAngle)
+    {
+      biggestAngle = currentAngle;
+    }
+    glm::float32 distance = glm::distance(lightPosition, cameraViewFrustumCoords[i]);
+    if(distance>*farPlane)
+    {
+      *farPlane = distance;
+    }
+  }
+  *angle = biggestAngle;
+}
+
 int getLightData(
   Position localPosition,
   glm::vec3 lightPosition[MAX_NUM_LIGHTS],
@@ -86,6 +132,15 @@ int getLightData(
 {
   static ecs::Entity influentialLights[MAX_NUM_LIGHTS];
   int numLights = getMostInfluentialLights(localPosition, influentialLights);
+
+  glCullFace(GL_BACK);
+
+  static auto genFramebuffer = [](){GLuint ret; glGenFramebuffers(1, &ret); return ret;};
+  static GLuint depthMapFramebufferID = genFramebuffer();
+  glBindFramebuffer(GL_FRAMEBUFFER, depthMapFramebufferID);
+  glDrawBuffer(GL_NONE);
+  glReadBuffer(GL_NONE);
+  glViewport(0, 0, SHADOW_WIDTH, SHADOW_WIDTH);
 
   for(int i = 0; i<numLights; i++)
   {
@@ -102,22 +157,57 @@ int getLightData(
     lightPower[i] = entity.getComponent<Light>().power;
     lightColor[i] = entity.getComponent<Light>().color;
 
-    auto genFramebuffer = [](){GLuint ret; glGenFramebuffers(1, &ret); return ret;};
-    static GLuint depthMapFramebufferID = genFramebuffer();
-
-    glBindFramebuffer(GL_FRAMEBUFFER, depthMapFramebufferID);
-  	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapID[i], 0);
-  	glDrawBuffer(GL_NONE);
-  	glReadBuffer(GL_NONE);
-    int width, height;
-    glfwGetFramebufferSize(Window::window, &width, &height);
-    glViewport(0, 0, SHADOW_WIDTH, SHADOW_WIDTH);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapID[i], 0);
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    //TODO: adjust perspectiv and lookat so that we get the best shadow quality
+    //TODO: multiple maps for different scales of view frustums
+    glm::float32 angle;
+    glm::float32 farPlane;
+    glm::vec3 lightLookAt;
+    glm::vec3 lightUp;
+
+
+    int width, height;
+    glfwGetFramebufferSize(Window::window, &width, &height);
+    glm::float32 aspectRatio = GLfloat(width)/GLfloat(width);
+    glm::float32 far = 100.0;
+    glm::vec3 cameraViewFrustumCoords[8] =
+    {
+      Camera::position.coordinates,
+      Camera::position.coordinates,
+      Camera::position.coordinates,
+      Camera::position.coordinates,
+
+      Camera::position.coordinates +
+        glm::normalize(Camera::viewDirection)*far +
+        glm::normalize(Camera::cameraUp)*glm::tan(Camera::fieldOfView/2.0f)*far +
+        glm::cross(Camera::cameraUp, Camera::viewDirection)*glm::tan(Camera::fieldOfView/2.0f)*far*aspectRatio,
+      Camera::position.coordinates +
+        glm::normalize(Camera::viewDirection)*far +
+        glm::normalize(Camera::cameraUp)*glm::tan(Camera::fieldOfView/2.0f)*far +
+        -glm::cross(Camera::cameraUp, Camera::viewDirection)*glm::tan(Camera::fieldOfView/2.0f)*far*aspectRatio,
+      Camera::position.coordinates +
+        glm::normalize(Camera::viewDirection)*far +
+        -glm::normalize(Camera::cameraUp)*glm::tan(Camera::fieldOfView/2.0f)*far +
+        glm::cross(Camera::cameraUp, Camera::viewDirection)*glm::tan(Camera::fieldOfView/2.0f)*far*aspectRatio,
+      Camera::position.coordinates +
+        glm::normalize(Camera::viewDirection)*far +
+        -glm::normalize(Camera::cameraUp)*glm::tan(Camera::fieldOfView/2.0f)*far +
+        -glm::cross(Camera::cameraUp, Camera::viewDirection)*glm::tan(Camera::fieldOfView/2.0f)*far*aspectRatio
+    };
+    getDataForLightPerspective(
+      &angle,
+      &farPlane,
+      &lightLookAt,
+      &lightUp,
+      cameraViewFrustumCoords,
+      Camera::position.coordinates,
+      Camera::position.coordinates + Camera::viewDirection,
+      lightPosition[i]
+    );
     worldToLight[i] =
-      glm::perspective(glm::radians(90.0f), GLfloat(SHADOW_WIDTH)/GLfloat(SHADOW_HEIGHT), 0.1f, 1000.0f) *
-      glm::lookAt(lightPosition[i], lightPosition[i] + glm::vec3(0.0, -1.0, 0.0), glm::vec3(0.0, 0.0, 1.0));
+      glm::perspective(angle, GLfloat(SHADOW_WIDTH)/GLfloat(SHADOW_HEIGHT), 0.1f, farPlane) *
+      glm::lookAt(lightPosition[i], lightLookAt, lightUp);
 
     for(auto entity : ecs::Iterator<Renderable>())
     {
@@ -130,20 +220,22 @@ int getLightData(
   			glUseProgram(Light::depthMapProgramID);
 
         glUniformMatrix4fv(
-					glGetUniformLocation(Light::depthMapProgramID, "modelToWorld"),// TODO store uniform location anywhere
+					Light::modelToWorld_UniformLocation,
 					1, GL_FALSE, &(modelToWorld[0][0])
 				);
 				glUniformMatrix4fv(
-					glGetUniformLocation(Light::depthMapProgramID, "worldToProjection"),// TODO store uniform location anywhere
+					Light::worldToProjection_UniformLocation,
 					1, GL_FALSE, &(worldToLight[i][0][0])
 				);
 
         glDrawArrays(GL_TRIANGLES, 0, model.vertices.size());
       }
     }
-
-  	glBindFramebuffer(GL_FRAMEBUFFER, 0);
   }
+
+  glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+  glCullFace(GL_FRONT);
 
   return numLights;
 }

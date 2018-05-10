@@ -25,21 +25,19 @@ uniform sampler2D diffuseTexture;
 uniform sampler2D normalMap;
 uniform sampler2D depthMap[MAX_NUM_LIGHTS];
 
-float shadowCalculation(vec4 fragPosition_LightSpace, int depthMapIndex)
+float shadowCalculation(int lightIndex)
 {
-  vec3 projCoords = fragPosition_LightSpace.xyz / fragPosition_LightSpace.w;
+  vec3 projCoords = vsOut.fragPosition_LightSpace[lightIndex].xyz / vsOut.fragPosition_LightSpace[lightIndex].w;
   projCoords = projCoords * 0.5 + 0.5;
-  float closestDepth = texture2D(depthMap[depthMapIndex], projCoords.xy).r;
   float currentDepth = projCoords.z;
-  float bias = 0.000005;
   float shadow = 0.0;
-  vec2 texelSize = 1.0 / textureSize(depthMap[depthMapIndex], 0);
+  vec2 texelSize = 1.0 / textureSize(depthMap[lightIndex], 0);
   for(int x = -1; x <= 1; ++x)
   {
     for(int y = -1; y <= 1; ++y)
     {
-      float pcfDepth = texture(depthMap[depthMapIndex], projCoords.xy + vec2(x, y) * texelSize).r;
-      shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
+      float pcfDepth = texture(depthMap[lightIndex], projCoords.xy + vec2(x, y) * texelSize).r;
+      shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
     }
   }
   shadow /= 9.0;
@@ -106,7 +104,7 @@ void main()
     toLight_TangentSpace[i] = normalize(vsOut.lightPosition_TangentSpace[i] - vsOut.fragPosition_TangentSpace);
     float lightDistance = distance(vsOut.lightPosition_TangentSpace[i], vsOut.fragPosition_TangentSpace);
     localLightPower[i] =
-      calculateLocalLightPower(lightDistance, lightPower[i])*(1.0 - shadowCalculation(vsOut.fragPosition_LightSpace[i], i));
+      calculateLocalLightPower(lightDistance, lightPower[i])*(1.0 - shadowCalculation(i));
   }
 
   vec3 toCamera = normalize(vsOut.cameraPosition_TangentSpace - vsOut.fragPosition_TangentSpace);
