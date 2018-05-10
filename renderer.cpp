@@ -118,7 +118,7 @@ void getDataForLightPerspective(
       *farPlane = distance;
     }
   }
-  *angle = biggestAngle;
+  *angle = 2.0*biggestAngle;
 }
 
 int getLightData(
@@ -169,8 +169,18 @@ int getLightData(
 
     int width, height;
     glfwGetFramebufferSize(Window::window, &width, &height);
-    glm::float32 aspectRatio = GLfloat(width)/GLfloat(width);
-    glm::float32 far = 100.0;
+    glm::float32 aspectRatio = GLfloat(width)/GLfloat(height);
+
+    glm::vec3 h_v = glm::normalize(Camera::viewDirection);
+    glm::vec3 w_v = glm::normalize(glm::cross(Camera::cameraUp, Camera::viewDirection));
+    glm::vec3 u_v = glm::normalize(glm::cross(w_v, Camera::viewDirection));
+
+    glm::float32 h_a = 100.0;
+    glm::float32 u_a = glm::tan(Camera::fieldOfView/2.0)*h_a;
+    glm::float32 w_a = u_a*aspectRatio;
+
+
+
     glm::vec3 cameraViewFrustumCoords[8] =
     {
       Camera::position.coordinates,
@@ -178,23 +188,12 @@ int getLightData(
       Camera::position.coordinates,
       Camera::position.coordinates,
 
-      Camera::position.coordinates +
-        glm::normalize(Camera::viewDirection)*far +
-        glm::normalize(Camera::cameraUp)*glm::tan(Camera::fieldOfView/2.0f)*far +
-        glm::cross(Camera::cameraUp, Camera::viewDirection)*glm::tan(Camera::fieldOfView/2.0f)*far*aspectRatio,
-      Camera::position.coordinates +
-        glm::normalize(Camera::viewDirection)*far +
-        glm::normalize(Camera::cameraUp)*glm::tan(Camera::fieldOfView/2.0f)*far +
-        -glm::cross(Camera::cameraUp, Camera::viewDirection)*glm::tan(Camera::fieldOfView/2.0f)*far*aspectRatio,
-      Camera::position.coordinates +
-        glm::normalize(Camera::viewDirection)*far +
-        -glm::normalize(Camera::cameraUp)*glm::tan(Camera::fieldOfView/2.0f)*far +
-        glm::cross(Camera::cameraUp, Camera::viewDirection)*glm::tan(Camera::fieldOfView/2.0f)*far*aspectRatio,
-      Camera::position.coordinates +
-        glm::normalize(Camera::viewDirection)*far +
-        -glm::normalize(Camera::cameraUp)*glm::tan(Camera::fieldOfView/2.0f)*far +
-        -glm::cross(Camera::cameraUp, Camera::viewDirection)*glm::tan(Camera::fieldOfView/2.0f)*far*aspectRatio
+      Camera::position.coordinates + h_v*h_a + u_v*u_a + w_v*w_a,
+      Camera::position.coordinates + h_v*h_a - u_v*u_a + w_v*w_a,
+      Camera::position.coordinates + h_v*h_a + u_v*u_a - w_v*w_a,
+      Camera::position.coordinates + h_v*h_a - u_v*u_a - w_v*w_a
     };
+
     getDataForLightPerspective(
       &angle,
       &farPlane,
@@ -206,7 +205,7 @@ int getLightData(
       lightPosition[i]
     );
     worldToLight[i] =
-      glm::perspective(angle, GLfloat(SHADOW_WIDTH)/GLfloat(SHADOW_HEIGHT), 0.1f, farPlane) *
+      glm::perspective(angle, GLfloat(SHADOW_WIDTH)/GLfloat(SHADOW_HEIGHT), 1.0f, farPlane) *
       glm::lookAt(lightPosition[i], lightLookAt, lightUp);
 
     for(auto entity : ecs::Iterator<Renderable>())

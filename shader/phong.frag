@@ -32,12 +32,13 @@ float shadowCalculation(int lightIndex)
   float currentDepth = projCoords.z;
   float shadow = 0.0;
   vec2 texelSize = 1.0 / textureSize(depthMap[lightIndex], 0);
+  float bias = 0.0;
   for(int x = -1; x <= 1; ++x)
   {
     for(int y = -1; y <= 1; ++y)
     {
       float pcfDepth = texture(depthMap[lightIndex], projCoords.xy + vec2(x, y) * texelSize).r;
-      shadow += currentDepth > pcfDepth ? 1.0 : 0.0;
+      shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
     }
   }
   shadow /= 9.0;
