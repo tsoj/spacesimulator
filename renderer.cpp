@@ -157,9 +157,6 @@ int getLightData(
     lightPower[i] = entity.getComponent<Light>().power;
     lightColor[i] = entity.getComponent<Light>().color;
 
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapID[i], 0);
-    glClear(GL_DEPTH_BUFFER_BIT);
-
     //TODO: multiple maps for different scales of view frustums
     glm::float32 angle;
     glm::float32 farPlane;
@@ -208,6 +205,8 @@ int getLightData(
       glm::perspective(angle, GLfloat(SHADOW_WIDTH)/GLfloat(SHADOW_HEIGHT), 1.0f, farPlane) *
       glm::lookAt(lightPosition[i], lightLookAt, lightUp);
 
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapID[i], 0);
+    glClear(GL_DEPTH_BUFFER_BIT);
     for(auto entity : ecs::Iterator<Renderable>())
     {
       glm::mat4 modelToWorld = getModelToWorld(entity);
@@ -262,6 +261,7 @@ void renderer()
     return ret;
   };
   static std::array<GLuint, MAX_NUM_LIGHTS> depthMapID = initDepthMaps();
+  static std::array<GLuint, MAX_NUM_LIGHTS> depthMapID1 = initDepthMaps();
 
   int numLights = getLightData(
     Camera::position,
@@ -275,7 +275,7 @@ void renderer()
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   glm::mat4 worldToProjection =
-    glm::perspective(glm::radians(Camera::fieldOfView), GLfloat(width)/GLfloat(height), 0.1f, 100.0f) *
+    glm::perspective(glm::radians(Camera::fieldOfView), GLfloat(width)/GLfloat(height), 0.5f, 1000.0f) *
     glm::lookAt(Camera::position.coordinates, Camera::position.coordinates + Camera::viewDirection, Camera::cameraUp);
 
   for(auto entity : ecs::Iterator<Renderable>())
@@ -341,24 +341,35 @@ void renderer()
       	model.shininess
       );
 
-      glUniform1i(model.diffuseTexture_UniformLocation, 0);
-      glActiveTexture(GL_TEXTURE0);
+      int textureCounter = 0;
+      glUniform1i(model.diffuseTexture_UniformLocation, textureCounter);
+      glActiveTexture(GL_TEXTURE0 + textureCounter++);
       glBindTexture(GL_TEXTURE_2D, model.diffuseTextureID);
 
-      glUniform1i(model.normalMap_UniformLocation, 1);
-      glActiveTexture(GL_TEXTURE1);
+      glUniform1i(model.normalMap_UniformLocation, textureCounter);
+      glActiveTexture(GL_TEXTURE0 + textureCounter++);
       glBindTexture(GL_TEXTURE_2D, model.normalMapID);
 
-      //glUniform1i(model.depthMap_UniformLocation, 2);
       GLint tmp[MAX_NUM_LIGHTS];
       for(GLint i = 0; i<MAX_NUM_LIGHTS; i++)
       {
-        tmp[i] = 2+i;
+        tmp[i] = textureCounter;
 
-        glActiveTexture(GL_TEXTURE2+i);
+        glActiveTexture(GL_TEXTURE0 + textureCounter++);
   			glBindTexture(GL_TEXTURE_2D, depthMapID[i]);
       }
       glUniform1iv(model.depthMap_UniformLocation,  MAX_NUM_LIGHTS,  tmp);
+
+
+      GLint tmp1[MAX_NUM_LIGHTS];
+      for(GLint i = 0; i<MAX_NUM_LIGHTS; i++)
+      {
+        tmp1[i] = textureCounter;
+
+        glActiveTexture(GL_TEXTURE0 + textureCounter++);
+  			glBindTexture(GL_TEXTURE_2D, depthMapID1[i]);
+      }
+      glUniform1iv(model.depthMap1_UniformLocation,  MAX_NUM_LIGHTS,  tmp1);
 
 
       glDrawArrays(GL_TRIANGLES, 0, model.vertices.size());

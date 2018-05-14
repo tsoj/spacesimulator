@@ -39,6 +39,8 @@ struct Model
   GLuint numLights_UniformLocation;
   GLuint worldToLight_UniformLocation;
   GLuint depthMap_UniformLocation;
+  GLuint worldToLight1_UniformLocation;
+  GLuint depthMap1_UniformLocation;
   GLuint lightPosition_UniformLocation;
   GLuint lightPower_UniformLocation;
   GLuint lightColor_UniformLocation;
@@ -127,6 +129,8 @@ struct Renderable
       models[i].numLights_UniformLocation = glGetUniformLocation(models[i].programID, "numLights");
       models[i].worldToLight_UniformLocation = glGetUniformLocation(models[i].programID, "worldToLight");
       models[i].depthMap_UniformLocation = glGetUniformLocation(models[i].programID, "depthMap");
+      models[i].worldToLight1_UniformLocation = glGetUniformLocation(models[i].programID, "worldToLight1");
+      models[i].depthMap1_UniformLocation = glGetUniformLocation(models[i].programID, "depthMap1");
       models[i].lightPosition_UniformLocation = glGetUniformLocation(models[i].programID, "lightPosition_WorldSpace");
       models[i].lightPower_UniformLocation = glGetUniformLocation(models[i].programID, "lightPower");
       models[i].lightColor_UniformLocation = glGetUniformLocation(models[i].programID, "lightColor");

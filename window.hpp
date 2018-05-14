@@ -14,7 +14,8 @@ namespace Window
     static std::vector<const char*> requiredExtensions =
     {
       "GL_ARB_vertex_attrib_64bit",
-      "GL_ARB_gpu_shader_fp64"
+      "GL_ARB_gpu_shader_fp64",
+      "GL_ARB_arrays_of_arrays"
     };
 
     static auto errorCallback_GLFW = [](int error, const char* description)

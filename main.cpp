@@ -22,6 +22,24 @@ void rotate()
   }
 }
 
+void moveLight()
+{
+  static std::chrono::high_resolution_clock::time_point start = std::chrono::high_resolution_clock::now();
+  float delta = (float)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count();
+  for(auto entity : ecs::Iterator<Light, Position>())
+  {
+    entity.getComponent<Position>().coordinates.x = 20.0*glm::sin(delta/500.0);
+  }
+}
+
+void moveSpacePlaneAway()
+{
+  for(auto entity : ecs::Iterator<Position, Renderable>())
+  {
+    entity.getComponent<Position>().coordinates.z += -0.1;
+  }
+}
+
 int main()
 {
   Window::init();
@@ -31,6 +49,7 @@ int main()
   ecs::SystemManager::addSystem(Gamestate::exitGame);
   ecs::SystemManager::addSystem(renderer, std::chrono::milliseconds(0));
   ecs::SystemManager::addSystem(rotate, std::chrono::milliseconds(10));
+  //ecs::SystemManager::addSystem(moveSpacePlaneAway, std::chrono::milliseconds(10));
 
   auto spaceship = ecs::Entity::createEntity();
   spaceship.createComponent<Renderable>();
@@ -56,19 +75,19 @@ int main()
   plane.getComponent<Position>().coordinates = glm::vec3(0.0, -5.0, -20.0);
   plane.getComponent<Orientation>().rotationMatrix = glm::mat4(1.0);
 
-  /*auto light = ecs::Entity::createEntity();
+  auto light = ecs::Entity::createEntity();
   light.createComponent<Light>();
   light.createComponent<Position>();
   light.getComponent<Light>().color = glm::vec3(1.0, 0.0, 0.0);
   light.getComponent<Light>().power = 1000000.0;
-  light.getComponent<Position>().coordinates = glm::vec3(0.0, 1000.0, -20.0);*/
+  light.getComponent<Position>().coordinates = glm::vec3(0.0, 1000.0, -20.0);
 
   auto light2 = ecs::Entity::createEntity();
   light2.createComponent<Light>();
   light2.createComponent<Position>();
   light2.getComponent<Light>().color = glm::vec3(0.0, 1.0, 0.0);
-  light2.getComponent<Light>().power = 10000.0;
-  light2.getComponent<Position>().coordinates = glm::vec3(0.0, 50.0, 0.0);
+  light2.getComponent<Light>().power = 1000000.0;
+  light2.getComponent<Position>().coordinates = glm::vec3(0.0, 500.0, 1000.0);
 
   /*auto light3 = ecs::Entity::createEntity();
   light3.createComponent<Light>();

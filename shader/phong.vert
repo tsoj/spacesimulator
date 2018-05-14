@@ -10,6 +10,7 @@ in layout(location = 3) vec2 textureCoordinate;
 uniform mat4 modelToWorld;
 uniform mat4 worldToProjection;
 uniform mat4 worldToLight[MAX_NUM_LIGHTS];
+uniform mat4 worldToLight1[MAX_NUM_LIGHTS];
 
 uniform vec3 cameraPosition_WorldSpace;
 uniform vec3 lightPosition_WorldSpace[MAX_NUM_LIGHTS];
@@ -22,6 +23,7 @@ out VsOut
   vec3 cameraPosition_TangentSpace;
   vec3 lightPosition_TangentSpace[MAX_NUM_LIGHTS];
   vec4 fragPosition_LightSpace[MAX_NUM_LIGHTS];
+  vec4 fragPosition_LightSpace1[MAX_NUM_LIGHTS];
 } vsOut;
 
 void main()
@@ -44,6 +46,7 @@ void main()
   {
     vsOut.lightPosition_TangentSpace[i] = worldToTangentSpace * lightPosition_WorldSpace[i];
     vsOut.fragPosition_LightSpace[i] = worldToLight[i] * vec4(vertPosition_WorldSpace, 1.0);
+    vsOut.fragPosition_LightSpace1[i] = worldToLight1[i] * vec4(vertPosition_WorldSpace, 1.0);
   }
   vsOut.textureCoordinate = textureCoordinate;
 }

@@ -9,6 +9,7 @@ in VsOut
   vec3 cameraPosition_TangentSpace;
   vec3 lightPosition_TangentSpace[MAX_NUM_LIGHTS];
   vec4 fragPosition_LightSpace[MAX_NUM_LIGHTS];
+  vec4 fragPosition_LightSpace1[MAX_NUM_LIGHTS];
 } vsOut;
 
 layout(location = 0) out vec4 outColor;
@@ -24,6 +25,7 @@ uniform float shininess;
 uniform sampler2D diffuseTexture;
 uniform sampler2D normalMap;
 uniform sampler2D depthMap[MAX_NUM_LIGHTS];
+uniform sampler2D depthMap1[MAX_NUM_LIGHTS];
 
 float shadowCalculation(int lightIndex)
 {
