@@ -49,7 +49,7 @@ int main()
   ecs::SystemManager::addSystem(Gamestate::exitGame);
   ecs::SystemManager::addSystem(renderer, std::chrono::milliseconds(0));
   ecs::SystemManager::addSystem(rotate, std::chrono::milliseconds(10));
-  //ecs::SystemManager::addSystem(moveSpacePlaneAway, std::chrono::milliseconds(10));
+  ecs::SystemManager::addSystem(moveSpacePlaneAway, std::chrono::milliseconds(10));
 
   auto spaceship = ecs::Entity::createEntity();
   spaceship.createComponent<Renderable>();

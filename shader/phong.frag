@@ -27,19 +27,33 @@ uniform sampler2D normalMap;
 uniform sampler2D depthMap[MAX_NUM_LIGHTS];
 uniform sampler2D depthMap1[MAX_NUM_LIGHTS];
 
+uniform float cascadeLevelDistance1;
+
 float shadowCalculation(int lightIndex)
 {
   vec3 projCoords = vsOut.fragPosition_LightSpace[lightIndex].xyz / vsOut.fragPosition_LightSpace[lightIndex].w;
+  if(distance(vsOut.fragPosition_TangentSpace, vsOut.cameraPosition_TangentSpace)>=cascadeLevelDistance1)
+  {
+    projCoords = vsOut.fragPosition_LightSpace1[lightIndex].xyz / vsOut.fragPosition_LightSpace1[lightIndex].w;
+  }
   projCoords = projCoords * 0.5 + 0.5;
   float currentDepth = projCoords.z;
   float shadow = 0.0;
   vec2 texelSize = 1.0 / textureSize(depthMap[lightIndex], 0);
+  if(distance(vsOut.fragPosition_TangentSpace, vsOut.cameraPosition_TangentSpace)>=cascadeLevelDistance1)
+  {
+    texelSize = 1.0 / textureSize(depthMap1[lightIndex], 0);
+  }
   float bias = 0.0;
   for(int x = -1; x <= 1; ++x)
   {
     for(int y = -1; y <= 1; ++y)
     {
       float pcfDepth = texture(depthMap[lightIndex], projCoords.xy + vec2(x, y) * texelSize).r;
+      if(distance(vsOut.fragPosition_TangentSpace, vsOut.cameraPosition_TangentSpace)>=cascadeLevelDistance1)
+      {
+        pcfDepth = texture(depthMap1[lightIndex], projCoords.xy + vec2(x, y) * texelSize).r;
+      }
       shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
     }
   }

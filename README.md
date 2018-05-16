@@ -12,4 +12,5 @@
 - [ ] collision detection
 - [ ] collision response
 - [ ] rendering text
+- [ ] openGL, glfw, etc. cleanup
 - [ ] ...

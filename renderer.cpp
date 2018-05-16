@@ -15,6 +15,7 @@
 
 const int MAX_NUM_LIGHTS = 10;
 const GLuint SHADOW_WIDTH=2048, SHADOW_HEIGHT=2048;
+const GLfloat CASCADE_LEVEL_1_DISTANCE = 100.0;
 
 int getMostInfluentialLights(Position localPosition, ecs::Entity influentialLights[MAX_NUM_LIGHTS])
 {
@@ -127,7 +128,9 @@ int getLightData(
   glm::float32 lightPower[MAX_NUM_LIGHTS],
   glm::vec3 lightColor[MAX_NUM_LIGHTS],
   glm::mat4 worldToLight[MAX_NUM_LIGHTS],
-  GLuint depthMapID[MAX_NUM_LIGHTS]
+  GLuint depthMapID[MAX_NUM_LIGHTS],
+  glm::mat4 worldToLight1[MAX_NUM_LIGHTS],
+  GLuint depthMapID1[MAX_NUM_LIGHTS]
 )
 {
   static ecs::Entity influentialLights[MAX_NUM_LIGHTS];
@@ -172,11 +175,9 @@ int getLightData(
     glm::vec3 w_v = glm::normalize(glm::cross(Camera::cameraUp, Camera::viewDirection));
     glm::vec3 u_v = glm::normalize(glm::cross(w_v, Camera::viewDirection));
 
-    glm::float32 h_a = 100.0;
+    glm::float32 h_a = CASCADE_LEVEL_1_DISTANCE;
     glm::float32 u_a = glm::tan(Camera::fieldOfView/2.0)*h_a;
     glm::float32 w_a = u_a*aspectRatio;
-
-
 
     glm::vec3 cameraViewFrustumCoords[8] =
     {
@@ -229,6 +230,62 @@ int getLightData(
         glDrawArrays(GL_TRIANGLES, 0, model.vertices.size());
       }
     }
+
+    glm::float32 h_a_1 = CASCADE_LEVEL_1_DISTANCE+1000.0;
+    glm::float32 u_a_1 = glm::tan(Camera::fieldOfView/2.0)*h_a_1;
+    glm::float32 w_a_1 = u_a*aspectRatio;
+
+    glm::vec3 cameraViewFrustumCoords1[8] =
+    {
+      Camera::position.coordinates + h_v*h_a + u_v*u_a + w_v*w_a,
+      Camera::position.coordinates + h_v*h_a - u_v*u_a + w_v*w_a,
+      Camera::position.coordinates + h_v*h_a + u_v*u_a - w_v*w_a,
+      Camera::position.coordinates + h_v*h_a - u_v*u_a - w_v*w_a,
+
+      Camera::position.coordinates + h_v*h_a_1 + u_v*u_a_1 + w_v*w_a_1,
+      Camera::position.coordinates + h_v*h_a_1 - u_v*u_a_1 + w_v*w_a_1,
+      Camera::position.coordinates + h_v*h_a_1 + u_v*u_a_1 - w_v*w_a_1,
+      Camera::position.coordinates + h_v*h_a_1 - u_v*u_a_1 - w_v*w_a_1,
+    };
+
+    getDataForLightPerspective(
+      &angle,
+      &farPlane,
+      &lightLookAt,
+      &lightUp,
+      cameraViewFrustumCoords1,
+      Camera::position.coordinates,
+      Camera::position.coordinates + Camera::viewDirection,
+      lightPosition[i]
+    );
+    worldToLight1[i] =
+      glm::perspective(angle, GLfloat(SHADOW_WIDTH)/GLfloat(SHADOW_HEIGHT), 1.0f, farPlane) *
+      glm::lookAt(lightPosition[i], lightLookAt, lightUp);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapID1[i], 0);
+    glClear(GL_DEPTH_BUFFER_BIT);
+    for(auto entity : ecs::Iterator<Renderable>())
+    {
+      glm::mat4 modelToWorld = getModelToWorld(entity);
+
+      for(auto& model : entity.getComponent<Renderable>().models)
+      {
+        glBindVertexArray(model.vertexArrayObjectID);
+
+  			glUseProgram(Light::depthMapProgramID);
+
+        glUniformMatrix4fv(
+					Light::modelToWorld_UniformLocation,
+					1, GL_FALSE, &(modelToWorld[0][0])
+				);
+				glUniformMatrix4fv(
+					Light::worldToProjection_UniformLocation,
+					1, GL_FALSE, &(worldToLight1[i][0][0])
+				);
+
+        glDrawArrays(GL_TRIANGLES, 0, model.vertices.size());
+      }
+    }
   }
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -244,6 +301,7 @@ void renderer()
   static glm::float32 lightPower[MAX_NUM_LIGHTS];
   static glm::vec3 lightColor[MAX_NUM_LIGHTS];
   static glm::mat4 worldToLight[MAX_NUM_LIGHTS];
+  static glm::mat4 worldToLight1[MAX_NUM_LIGHTS];
 
   static auto initDepthMaps = []()
   {
@@ -266,7 +324,8 @@ void renderer()
   int numLights = getLightData(
     Camera::position,
     lightPosition, lightPower, lightColor,
-    worldToLight, depthMapID.data()
+    worldToLight, depthMapID.data(),
+    worldToLight1, depthMapID1.data()
   );
 
   int width, height;
@@ -308,6 +367,10 @@ void renderer()
       	model.worldToLight_UniformLocation,
       	numLights, GL_FALSE, &(worldToLight[0][0][0])
       );
+      glUniformMatrix4fv(
+      	model.worldToLight1_UniformLocation,
+      	numLights, GL_FALSE, &(worldToLight1[0][0][0])
+      );
       glUniform3fv(
       	model.lightPosition_UniformLocation,
       	numLights, &lightPosition[0][0]
@@ -339,6 +402,11 @@ void renderer()
       glUniform1f(
       	model.shininess_UniformLocation,
       	model.shininess
+      );
+
+      glUniform1f(
+      	glGetUniformLocation(model.programID, "cascadeLevelDistance1"),
+      	CASCADE_LEVEL_1_DISTANCE
       );
 
       int textureCounter = 0;
