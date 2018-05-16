@@ -1,6 +1,7 @@
 #version 450
 
 #define MAX_NUM_LIGHTS 10
+#define NUM_CASCADES 3
 
 in VsOut
 {
@@ -8,8 +9,7 @@ in VsOut
   vec2 textureCoordinate;
   vec3 cameraPosition_TangentSpace;
   vec3 lightPosition_TangentSpace[MAX_NUM_LIGHTS];
-  vec4 fragPosition_LightSpace[MAX_NUM_LIGHTS];
-  vec4 fragPosition_LightSpace1[MAX_NUM_LIGHTS];
+  vec4 fragPosition_LightSpace[NUM_CASCADES][MAX_NUM_LIGHTS];
 } vsOut;
 
 layout(location = 0) out vec4 outColor;
@@ -24,36 +24,23 @@ uniform float transparency;
 uniform float shininess;
 uniform sampler2D diffuseTexture;
 uniform sampler2D normalMap;
-uniform sampler2D depthMap[MAX_NUM_LIGHTS];
-uniform sampler2D depthMap1[MAX_NUM_LIGHTS];
+uniform sampler2D depthMap[NUM_CASCADES][MAX_NUM_LIGHTS];
 
-uniform float cascadeLevelDistance1;
+uniform float cascadeDistances[NUM_CASCADES];
 
-float shadowCalculation(int lightIndex)
+float shadowCalculation(int lightIndex, int cascadeIndex)
 {
-  vec3 projCoords = vsOut.fragPosition_LightSpace[lightIndex].xyz / vsOut.fragPosition_LightSpace[lightIndex].w;
-  if(distance(vsOut.fragPosition_TangentSpace, vsOut.cameraPosition_TangentSpace)>=cascadeLevelDistance1)
-  {
-    projCoords = vsOut.fragPosition_LightSpace1[lightIndex].xyz / vsOut.fragPosition_LightSpace1[lightIndex].w;
-  }
+  vec3 projCoords = vsOut.fragPosition_LightSpace[cascadeIndex][lightIndex].xyz / vsOut.fragPosition_LightSpace[cascadeIndex][lightIndex].w;
   projCoords = projCoords * 0.5 + 0.5;
   float currentDepth = projCoords.z;
   float shadow = 0.0;
-  vec2 texelSize = 1.0 / textureSize(depthMap[lightIndex], 0);
-  if(distance(vsOut.fragPosition_TangentSpace, vsOut.cameraPosition_TangentSpace)>=cascadeLevelDistance1)
-  {
-    texelSize = 1.0 / textureSize(depthMap1[lightIndex], 0);
-  }
+  vec2 texelSize = 1.0 / textureSize(depthMap[cascadeIndex][lightIndex], 0);
   float bias = 0.0;
   for(int x = -1; x <= 1; ++x)
   {
     for(int y = -1; y <= 1; ++y)
     {
-      float pcfDepth = texture(depthMap[lightIndex], projCoords.xy + vec2(x, y) * texelSize).r;
-      if(distance(vsOut.fragPosition_TangentSpace, vsOut.cameraPosition_TangentSpace)>=cascadeLevelDistance1)
-      {
-        pcfDepth = texture(depthMap1[lightIndex], projCoords.xy + vec2(x, y) * texelSize).r;
-      }
+      float pcfDepth = texture(depthMap[cascadeIndex][lightIndex], projCoords.xy + vec2(x, y) * texelSize).r;
       shadow += currentDepth - bias > pcfDepth ? 1.0 : 0.0;
     }
   }
@@ -114,6 +101,18 @@ void main()
 
   vec3 fragNormal_TangentSpace = normalize(texture2D(normalMap, vsOut.textureCoordinate).rgb * 2.0 - vec3(1.0, 1.0, 1.0));
 
+  int cascadeIndex;
+  float currentCascadeDistance = distance(vsOut.fragPosition_TangentSpace, vsOut.cameraPosition_TangentSpace);
+  for(int i = 0; i<NUM_CASCADES; i++)
+  {
+    cascadeIndex = i;
+    if(currentCascadeDistance<cascadeDistances[i])
+    {
+      break;
+    }
+  }
+
+
   vec3 toLight_TangentSpace[MAX_NUM_LIGHTS];
   float localLightPower[MAX_NUM_LIGHTS];
   for(int i = 0; i < numLights; i++)
@@ -121,7 +120,7 @@ void main()
     toLight_TangentSpace[i] = normalize(vsOut.lightPosition_TangentSpace[i] - vsOut.fragPosition_TangentSpace);
     float lightDistance = distance(vsOut.lightPosition_TangentSpace[i], vsOut.fragPosition_TangentSpace);
     localLightPower[i] =
-      calculateLocalLightPower(lightDistance, lightPower[i])*(1.0 - shadowCalculation(i));
+      calculateLocalLightPower(lightDistance, lightPower[i])*(1.0 - shadowCalculation(i, cascadeIndex));
   }
 
   vec3 toCamera = normalize(vsOut.cameraPosition_TangentSpace - vsOut.fragPosition_TangentSpace);

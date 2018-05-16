@@ -48,7 +48,7 @@ int main()
   ecs::SystemManager::addSystem(Input::catchInput, std::chrono::milliseconds(0));
   ecs::SystemManager::addSystem(Gamestate::exitGame);
   ecs::SystemManager::addSystem(renderer, std::chrono::milliseconds(0));
-  ecs::SystemManager::addSystem(rotate, std::chrono::milliseconds(10));
+  //ecs::SystemManager::addSystem(rotate, std::chrono::milliseconds(10));
   ecs::SystemManager::addSystem(moveSpacePlaneAway, std::chrono::milliseconds(10));
 
   auto spaceship = ecs::Entity::createEntity();
@@ -72,8 +72,8 @@ int main()
   plane.createComponent<Position>();
   plane.createComponent<Orientation>();
   plane.getComponent<Renderable>().init("model/plane.obj", "shader/phong.vert", "shader/phong.frag");
-  plane.getComponent<Position>().coordinates = glm::vec3(0.0, -5.0, -20.0);
-  plane.getComponent<Orientation>().rotationMatrix = glm::mat4(1.0);
+  plane.getComponent<Position>().coordinates = glm::vec3(0.0, -5.0, -25.0);
+  plane.getComponent<Orientation>().rotationMatrix = glm::rotate(glm::mat4(), glm::radians(60.0f), glm::vec3(1.0,0.0,0.3));//glm::mat4(1.0);
 
   auto light = ecs::Entity::createEntity();
   light.createComponent<Light>();

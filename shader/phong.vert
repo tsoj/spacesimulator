@@ -1,6 +1,7 @@
 #version 450
 
 #define MAX_NUM_LIGHTS 10
+#define NUM_CASCADES 3
 
 in layout(location = 0) vec4 vertPosition_ModelSpace;
 in layout(location = 1) vec3 vertNormal_ModelSpace;
@@ -9,8 +10,7 @@ in layout(location = 3) vec2 textureCoordinate;
 
 uniform mat4 modelToWorld;
 uniform mat4 worldToProjection;
-uniform mat4 worldToLight[MAX_NUM_LIGHTS];
-uniform mat4 worldToLight1[MAX_NUM_LIGHTS];
+uniform mat4 worldToLight[NUM_CASCADES][MAX_NUM_LIGHTS];
 
 uniform vec3 cameraPosition_WorldSpace;
 uniform vec3 lightPosition_WorldSpace[MAX_NUM_LIGHTS];
@@ -22,8 +22,7 @@ out VsOut
   vec2 textureCoordinate;
   vec3 cameraPosition_TangentSpace;
   vec3 lightPosition_TangentSpace[MAX_NUM_LIGHTS];
-  vec4 fragPosition_LightSpace[MAX_NUM_LIGHTS];
-  vec4 fragPosition_LightSpace1[MAX_NUM_LIGHTS];
+  vec4 fragPosition_LightSpace[2][MAX_NUM_LIGHTS];
 } vsOut;
 
 void main()
@@ -45,8 +44,10 @@ void main()
   for(int i = 0; i < numLights; i++)
   {
     vsOut.lightPosition_TangentSpace[i] = worldToTangentSpace * lightPosition_WorldSpace[i];
-    vsOut.fragPosition_LightSpace[i] = worldToLight[i] * vec4(vertPosition_WorldSpace, 1.0);
-    vsOut.fragPosition_LightSpace1[i] = worldToLight1[i] * vec4(vertPosition_WorldSpace, 1.0);
+    for(int cascadeIndex = 0; cascadeIndex<NUM_CASCADES; cascadeIndex++)
+    {
+      vsOut.fragPosition_LightSpace[cascadeIndex][i] = worldToLight[cascadeIndex][i] * vec4(vertPosition_WorldSpace, 1.0);
+    }
   }
   vsOut.textureCoordinate = textureCoordinate;
 }

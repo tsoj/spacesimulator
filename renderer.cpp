@@ -1,7 +1,5 @@
 #include "renderer.hpp"
 
-#include <array>
-
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "renderable.hpp"
@@ -15,7 +13,8 @@
 
 const int MAX_NUM_LIGHTS = 10;
 const GLuint SHADOW_WIDTH=2048, SHADOW_HEIGHT=2048;
-const GLfloat CASCADE_LEVEL_1_DISTANCE = 100.0;
+const int NUM_CASCADES = 2;
+const float CASCADE_DISTANCES[NUM_CASCADES] = {30.0, 90.0};
 
 int getMostInfluentialLights(Position localPosition, ecs::Entity influentialLights[MAX_NUM_LIGHTS])
 {
@@ -127,10 +126,8 @@ int getLightData(
   glm::vec3 lightPosition[MAX_NUM_LIGHTS],
   glm::float32 lightPower[MAX_NUM_LIGHTS],
   glm::vec3 lightColor[MAX_NUM_LIGHTS],
-  glm::mat4 worldToLight[MAX_NUM_LIGHTS],
-  GLuint depthMapID[MAX_NUM_LIGHTS],
-  glm::mat4 worldToLight1[MAX_NUM_LIGHTS],
-  GLuint depthMapID1[MAX_NUM_LIGHTS]
+  glm::mat4 worldToLight[NUM_CASCADES][MAX_NUM_LIGHTS],
+  GLuint depthMapID[NUM_CASCADES][MAX_NUM_LIGHTS]
 )
 {
   static ecs::Entity influentialLights[MAX_NUM_LIGHTS];
@@ -175,115 +172,76 @@ int getLightData(
     glm::vec3 w_v = glm::normalize(glm::cross(Camera::cameraUp, Camera::viewDirection));
     glm::vec3 u_v = glm::normalize(glm::cross(w_v, Camera::viewDirection));
 
-    glm::float32 h_a = CASCADE_LEVEL_1_DISTANCE;
-    glm::float32 u_a = glm::tan(Camera::fieldOfView/2.0)*h_a;
-    glm::float32 w_a = u_a*aspectRatio;
-
-    glm::vec3 cameraViewFrustumCoords[8] =
+    for(int cascadeIndex = 0; cascadeIndex<NUM_CASCADES; cascadeIndex++)
     {
-      Camera::position.coordinates,
-      Camera::position.coordinates,
-      Camera::position.coordinates,
-      Camera::position.coordinates,
+      glm::float32 h_a = CASCADE_DISTANCES[cascadeIndex];
+      glm::float32 u_a = glm::tan(Camera::fieldOfView/2.0)*h_a;
+      glm::float32 w_a = u_a*aspectRatio;
 
-      Camera::position.coordinates + h_v*h_a + u_v*u_a + w_v*w_a,
-      Camera::position.coordinates + h_v*h_a - u_v*u_a + w_v*w_a,
-      Camera::position.coordinates + h_v*h_a + u_v*u_a - w_v*w_a,
-      Camera::position.coordinates + h_v*h_a - u_v*u_a - w_v*w_a
-    };
-
-    getDataForLightPerspective(
-      &angle,
-      &farPlane,
-      &lightLookAt,
-      &lightUp,
-      cameraViewFrustumCoords,
-      Camera::position.coordinates,
-      Camera::position.coordinates + Camera::viewDirection,
-      lightPosition[i]
-    );
-    worldToLight[i] =
-      glm::perspective(angle, GLfloat(SHADOW_WIDTH)/GLfloat(SHADOW_HEIGHT), 1.0f, farPlane) *
-      glm::lookAt(lightPosition[i], lightLookAt, lightUp);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapID[i], 0);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    for(auto entity : ecs::Iterator<Renderable>())
-    {
-      glm::mat4 modelToWorld = getModelToWorld(entity);
-
-      for(auto& model : entity.getComponent<Renderable>().models)
+      glm::vec3 cameraViewFrustumCoords[8];
+      if(cascadeIndex==0)
       {
-        glBindVertexArray(model.vertexArrayObjectID);
-
-  			glUseProgram(Light::depthMapProgramID);
-
-        glUniformMatrix4fv(
-					Light::modelToWorld_UniformLocation,
-					1, GL_FALSE, &(modelToWorld[0][0])
-				);
-				glUniformMatrix4fv(
-					Light::worldToProjection_UniformLocation,
-					1, GL_FALSE, &(worldToLight[i][0][0])
-				);
-
-        glDrawArrays(GL_TRIANGLES, 0, model.vertices.size());
+        cameraViewFrustumCoords[0] = Camera::position.coordinates;
+        cameraViewFrustumCoords[1] = Camera::position.coordinates;
+        cameraViewFrustumCoords[2] = Camera::position.coordinates;
+        cameraViewFrustumCoords[3] = Camera::position.coordinates;
+        cameraViewFrustumCoords[4] = Camera::position.coordinates + h_v*h_a + u_v*u_a + w_v*w_a;
+        cameraViewFrustumCoords[5] = Camera::position.coordinates + h_v*h_a - u_v*u_a + w_v*w_a;
+        cameraViewFrustumCoords[6] = Camera::position.coordinates + h_v*h_a + u_v*u_a - w_v*w_a;
+        cameraViewFrustumCoords[7] = Camera::position.coordinates + h_v*h_a - u_v*u_a - w_v*w_a;
       }
-    }
-
-    glm::float32 h_a_1 = CASCADE_LEVEL_1_DISTANCE+1000.0;
-    glm::float32 u_a_1 = glm::tan(Camera::fieldOfView/2.0)*h_a_1;
-    glm::float32 w_a_1 = u_a*aspectRatio;
-
-    glm::vec3 cameraViewFrustumCoords1[8] =
-    {
-      Camera::position.coordinates + h_v*h_a + u_v*u_a + w_v*w_a,
-      Camera::position.coordinates + h_v*h_a - u_v*u_a + w_v*w_a,
-      Camera::position.coordinates + h_v*h_a + u_v*u_a - w_v*w_a,
-      Camera::position.coordinates + h_v*h_a - u_v*u_a - w_v*w_a,
-
-      Camera::position.coordinates + h_v*h_a_1 + u_v*u_a_1 + w_v*w_a_1,
-      Camera::position.coordinates + h_v*h_a_1 - u_v*u_a_1 + w_v*w_a_1,
-      Camera::position.coordinates + h_v*h_a_1 + u_v*u_a_1 - w_v*w_a_1,
-      Camera::position.coordinates + h_v*h_a_1 - u_v*u_a_1 - w_v*w_a_1,
-    };
-
-    getDataForLightPerspective(
-      &angle,
-      &farPlane,
-      &lightLookAt,
-      &lightUp,
-      cameraViewFrustumCoords1,
-      Camera::position.coordinates,
-      Camera::position.coordinates + Camera::viewDirection,
-      lightPosition[i]
-    );
-    worldToLight1[i] =
-      glm::perspective(angle, GLfloat(SHADOW_WIDTH)/GLfloat(SHADOW_HEIGHT), 1.0f, farPlane) *
-      glm::lookAt(lightPosition[i], lightLookAt, lightUp);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapID1[i], 0);
-    glClear(GL_DEPTH_BUFFER_BIT);
-    for(auto entity : ecs::Iterator<Renderable>())
-    {
-      glm::mat4 modelToWorld = getModelToWorld(entity);
-
-      for(auto& model : entity.getComponent<Renderable>().models)
+      else
       {
-        glBindVertexArray(model.vertexArrayObjectID);
+        glm::float32 h_a_m = CASCADE_DISTANCES[cascadeIndex-1];
+        glm::float32 u_a_m = glm::tan(Camera::fieldOfView/2.0)*h_a_m;
+        glm::float32 w_a_m = u_a_m*aspectRatio;
+        cameraViewFrustumCoords[0] = Camera::position.coordinates + h_v*h_a_m + u_v*u_a_m + w_v*w_a_m;
+        cameraViewFrustumCoords[1] = Camera::position.coordinates + h_v*h_a_m - u_v*u_a_m + w_v*w_a_m;
+        cameraViewFrustumCoords[2] = Camera::position.coordinates + h_v*h_a_m + u_v*u_a_m - w_v*w_a_m;
+        cameraViewFrustumCoords[3] = Camera::position.coordinates + h_v*h_a_m - u_v*u_a_m - w_v*w_a_m;
+        cameraViewFrustumCoords[4] = Camera::position.coordinates + h_v*h_a + u_v*u_a + w_v*w_a;
+        cameraViewFrustumCoords[5] = Camera::position.coordinates + h_v*h_a - u_v*u_a + w_v*w_a;
+        cameraViewFrustumCoords[6] = Camera::position.coordinates + h_v*h_a + u_v*u_a - w_v*w_a;
+        cameraViewFrustumCoords[7] = Camera::position.coordinates + h_v*h_a - u_v*u_a - w_v*w_a;
+      }
 
-  			glUseProgram(Light::depthMapProgramID);
+      getDataForLightPerspective(
+        &angle,
+        &farPlane,
+        &lightLookAt,
+        &lightUp,
+        cameraViewFrustumCoords,
+        Camera::position.coordinates,
+        Camera::position.coordinates + Camera::viewDirection,
+        lightPosition[i]
+      );
+      worldToLight[cascadeIndex][i] =
+        glm::perspective(angle, GLfloat(SHADOW_WIDTH)/GLfloat(SHADOW_HEIGHT), 1.0f, farPlane) *
+        glm::lookAt(lightPosition[i], lightLookAt, lightUp);
 
-        glUniformMatrix4fv(
-					Light::modelToWorld_UniformLocation,
-					1, GL_FALSE, &(modelToWorld[0][0])
-				);
-				glUniformMatrix4fv(
-					Light::worldToProjection_UniformLocation,
-					1, GL_FALSE, &(worldToLight1[i][0][0])
-				);
+      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMapID[cascadeIndex][i], 0);
+      glClear(GL_DEPTH_BUFFER_BIT);
+      for(auto entity : ecs::Iterator<Renderable>())
+      {
+        glm::mat4 modelToWorld = getModelToWorld(entity);
 
-        glDrawArrays(GL_TRIANGLES, 0, model.vertices.size());
+        for(auto& model : entity.getComponent<Renderable>().models)
+        {
+          glBindVertexArray(model.vertexArrayObjectID);
+
+    			glUseProgram(Light::depthMapProgramID);
+
+          glUniformMatrix4fv(
+  					Light::modelToWorld_UniformLocation,
+  					1, GL_FALSE, &(modelToWorld[0][0])
+  				);
+  				glUniformMatrix4fv(
+  					Light::worldToProjection_UniformLocation,
+  					1, GL_FALSE, &(worldToLight[cascadeIndex][i][0][0])
+  				);
+
+          glDrawArrays(GL_TRIANGLES, 0, model.vertices.size());
+        }
       }
     }
   }
@@ -300,32 +258,33 @@ void renderer()
   static glm::vec3 lightPosition[MAX_NUM_LIGHTS];
   static glm::float32 lightPower[MAX_NUM_LIGHTS];
   static glm::vec3 lightColor[MAX_NUM_LIGHTS];
-  static glm::mat4 worldToLight[MAX_NUM_LIGHTS];
-  static glm::mat4 worldToLight1[MAX_NUM_LIGHTS];
+  static glm::mat4 worldToLight[NUM_CASCADES][MAX_NUM_LIGHTS];
+  static GLuint depthMapID[NUM_CASCADES][MAX_NUM_LIGHTS];
 
-  static auto initDepthMaps = []()
+  static auto initDepthMaps = [](GLuint depthMapID[NUM_CASCADES][MAX_NUM_LIGHTS])
   {
-    std::array<GLuint, MAX_NUM_LIGHTS> ret;
     for(size_t i = 0; i< MAX_NUM_LIGHTS; i++)
     {
-      glGenTextures(1, &ret[i]);
-  	  glBindTexture(GL_TEXTURE_2D, ret[i]);
-  	  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-  	  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-  	  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-  	  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  	  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      for(int cascadeIndex = 0; cascadeIndex<NUM_CASCADES; cascadeIndex++)
+      {
+        glGenTextures(1, &depthMapID[cascadeIndex][i]);
+    	  glBindTexture(GL_TEXTURE_2D, depthMapID[cascadeIndex][i]);
+    	  glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+    	  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    	  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    	  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    	  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+      }
     }
-    return ret;
+    return 0;
   };
-  static std::array<GLuint, MAX_NUM_LIGHTS> depthMapID = initDepthMaps();
-  static std::array<GLuint, MAX_NUM_LIGHTS> depthMapID1 = initDepthMaps();
+  static char _____c = initDepthMaps(depthMapID);
 
   int numLights = getLightData(
     Camera::position,
     lightPosition, lightPower, lightColor,
-    worldToLight, depthMapID.data(),
-    worldToLight1, depthMapID1.data()
+    worldToLight,
+    depthMapID
   );
 
   int width, height;
@@ -364,12 +323,12 @@ void renderer()
       	numLights
       );
       glUniformMatrix4fv(
-      	model.worldToLight_UniformLocation,
-      	numLights, GL_FALSE, &(worldToLight[0][0][0])
+      	glGetUniformLocation(model.programID, "worldToLight[0]"),
+      	numLights, GL_FALSE, &(worldToLight[0][0][0][0])
       );
       glUniformMatrix4fv(
-      	model.worldToLight1_UniformLocation,
-      	numLights, GL_FALSE, &(worldToLight1[0][0][0])
+      	glGetUniformLocation(model.programID, "worldToLight[1]"),
+      	numLights, GL_FALSE, &(worldToLight[1][0][0][0])
       );
       glUniform3fv(
       	model.lightPosition_UniformLocation,
@@ -404,9 +363,9 @@ void renderer()
       	model.shininess
       );
 
-      glUniform1f(
-      	glGetUniformLocation(model.programID, "cascadeLevelDistance1"),
-      	CASCADE_LEVEL_1_DISTANCE
+      glUniform1fv(
+      	glGetUniformLocation(model.programID, "cascadeDistances"),
+        NUM_CASCADES,	CASCADE_DISTANCES
       );
 
       int textureCounter = 0;
@@ -418,26 +377,18 @@ void renderer()
       glActiveTexture(GL_TEXTURE0 + textureCounter++);
       glBindTexture(GL_TEXTURE_2D, model.normalMapID);
 
-      GLint tmp[MAX_NUM_LIGHTS];
-      for(GLint i = 0; i<MAX_NUM_LIGHTS; i++)
+      for(int cascadeIndex = 0; cascadeIndex<NUM_CASCADES; cascadeIndex++)
       {
-        tmp[i] = textureCounter;
+        GLint tmp[MAX_NUM_LIGHTS];
+        for(GLint i = 0; i<MAX_NUM_LIGHTS; i++)
+        {
+          tmp[i] = textureCounter;
 
-        glActiveTexture(GL_TEXTURE0 + textureCounter++);
-  			glBindTexture(GL_TEXTURE_2D, depthMapID[i]);
+          glActiveTexture(GL_TEXTURE0 + textureCounter++);
+    			glBindTexture(GL_TEXTURE_2D, depthMapID[cascadeIndex][i]);
+        }
+        glUniform1iv(glGetUniformLocation(model.programID, (std::string("depthMap[")+std::to_string(cascadeIndex)+std::string("]")).c_str()),  MAX_NUM_LIGHTS,  tmp);
       }
-      glUniform1iv(model.depthMap_UniformLocation,  MAX_NUM_LIGHTS,  tmp);
-
-
-      GLint tmp1[MAX_NUM_LIGHTS];
-      for(GLint i = 0; i<MAX_NUM_LIGHTS; i++)
-      {
-        tmp1[i] = textureCounter;
-
-        glActiveTexture(GL_TEXTURE0 + textureCounter++);
-  			glBindTexture(GL_TEXTURE_2D, depthMapID1[i]);
-      }
-      glUniform1iv(model.depthMap1_UniformLocation,  MAX_NUM_LIGHTS,  tmp1);
 
 
       glDrawArrays(GL_TRIANGLES, 0, model.vertices.size());
